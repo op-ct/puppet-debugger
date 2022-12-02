@@ -6,7 +6,7 @@ stages:
   - test
   - release
   - deploy
-  - web_deploy
+  #- web_deploy
 
 .puppet_def: &puppet_job_def
   stage: test
@@ -20,14 +20,15 @@ stages:
   tags:
     - ruby
 
-web_trigger_staging:
-  stage: web_deploy
-  variables:
-    REF: staging
-  only:
-    - main
-  script:
-    - "curl -X POST -F token=$PREPL_BUILD_TRIGGER_TOKEN -F ref=$REF https://gitlab.com/api/v3/projects/1146764/trigger/builds"
+# will be replaced by akash tf provider
+# web_trigger_staging:
+#   stage: web_deploy
+#   variables:
+#     REF: staging
+#   only:
+#     - main
+#   script:
+#     - "curl -X POST -F token=$PREPL_BUILD_TRIGGER_TOKEN -F ref=$REF https://gitlab.com/api/v4/projects/1146764/trigger/builds"
 
 rubocop_ruby:
   stage: validate
