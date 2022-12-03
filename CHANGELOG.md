@@ -1,6 +1,11 @@
 # Puppet Debugger Changelog
 
 ## Unreleased
+## 1.3
+- Fix failures when using Bolt 3.23+
+- Relax tty-pager constraints (for Bolt)
+- Stop testing puppet 5
+- Stop testing ruby 2.4
 ## 1.2
 - Fix puppetdb_query errors when bolt_pdb_client was not loaded
 ## 1.1

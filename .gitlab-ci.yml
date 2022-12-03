@@ -46,7 +46,7 @@ bump_and_tag:
   stage: release
   when: manual
   tags:
-    - ruby2.2
+    - ruby2.7
   only:
     - main@puppet-debugger/puppet-debugger
   script:
