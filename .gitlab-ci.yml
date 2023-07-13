@@ -5,7 +5,7 @@ stages:
   - validate
   - test
   - release
-  - deploy
+  # - deploy
   #- web_deploy
 
 .puppet_def: &puppet_job_def
@@ -64,47 +64,26 @@ bump_and_tag:
 #  script:
 #    - "curl -X POST -F token=$PREPL_BUILD_TRIGGER_TOKEN -F ref=$REF https://gitlab.com/api/v3/projects/1146764/trigger/builds"
 
-.ruby_24: &ruby24
-  image: ruby:2.4
-
-.ruby_25: &ruby25
-  image: ruby:2.5
-
-.ruby_26: &ruby26
-  image: ruby:2.6
-
 .ruby_27: &ruby27
   image: ruby:2.7
-
-.ruby_30: &ruby30
-  image: ruby:3.0
 
 .ruby_31: &ruby31
   image: ruby:3.1
 
-gem_production:
-  image: ruby:2.7
-  tags:
-    - ruby
-  before_script:
-    - gem install dpl
-  stage: deploy
-  script:
-    - dpl --provider=rubygems --api-key=$RUBYGEMS_API_KEY
-  only:
-    - tags
+.ruby_32: &ruby32
+  image: ruby:3.2
 
-puppet_6_ruby25:
-  variables:
-    PUPPET_GEM_VERSION: "~> 6.0"
-  <<: *puppet_job_def
-  <<: *ruby25
-
-puppet_6_ruby26:
-  variables:
-    PUPPET_GEM_VERSION: "~> 6.0"
-  <<: *puppet_job_def
-  <<: *ruby26
+# gem_production:
+#   image: ruby:2.7
+#   tags:
+#     - ruby
+#   before_script:
+#     - gem install dpl
+#   stage: deploy
+#   script:
+#     - dpl --provider=rubygems --api-key=$RUBYGEMS_API_KEY
+#   only:
+#     - tags
 
 puppet_6_ruby27:
   allow_failure: false
@@ -120,11 +99,11 @@ puppet_7_ruby27:
   <<: *puppet_job_def
   <<: *ruby27
 
-# puppet_8_ruby3.0:
-#   allow_failure: true
-#   variables:
-#     PUPPET_GEM_VERSION: "~> 8.0"
-#   <<: *puppet_job_def
-#   <<: *ruby30
+puppet_8_ruby3.2:
+  allow_failure: true
+  variables:
+    PUPPET_GEM_VERSION: "~> 8.0"
+  <<: *puppet_job_def
+  <<: *ruby32
 
 
