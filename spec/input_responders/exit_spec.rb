@@ -24,7 +24,7 @@ describe :exit do
     {}
   end
 
-  it 'commands contant is an array' do
+  it 'commands content is an array' do
     expect(plugin.class::COMMAND_WORDS).to be_a(Array)
   end
 

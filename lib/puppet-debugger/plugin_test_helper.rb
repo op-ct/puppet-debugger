@@ -20,7 +20,7 @@ RSpec.shared_examples 'plugin_tests' do |_parameter|
     {}
   end
 
-  it 'commands contant is an array' do
+  it 'commands content is an array' do
     expect(plugin.class::COMMAND_WORDS).to be_a(Array)
   end
 

@@ -16,7 +16,7 @@ group :test, :development do
   gem 'pry'
   gem 'puppet-debugger', path: './'
   gem 'rake', '~> 13.0'
-  gem 'rdoc', '~> 3.12'
+  gem 'rdoc', '~> 6.0'
   gem 'release_me'
   gem 'rspec', '~> 3.6'
   gem 'rubocop'

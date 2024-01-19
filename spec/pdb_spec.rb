@@ -31,7 +31,7 @@ describe 'pdb' do
 
   describe 'remote_node' do
     let(:node_obj) do
-      YAML.load_file(File.join(fixtures_dir, 'node_obj.yaml'))
+      YAML.unsafe_load_file(File.join(fixtures_dir, 'node_obj.yaml'))
     end
     let(:node_name) do
       'puppetdev.localdomain'

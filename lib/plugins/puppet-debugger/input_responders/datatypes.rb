@@ -29,9 +29,10 @@ module PuppetDebugger
         files = globs.map { |g| Dir.glob(g) }.flatten
         files.map do |f|
           m = File.read(f).match(/type\s([a-z\d\:_]+)/i)
-          next if m =~ /type|alias/ # can't figure out the best way to filter type and alias out
-
-          m[1] if m && m[1] =~ /::/
+          if m
+            next if m[1] =~ /type|alias/ # can't figure out the best way to filter type and alias out
+            m[1] if m[1] =~ /::/
+          end
         end.uniq.compact
       end
 

@@ -29,7 +29,7 @@ describe 'PuppetDebugger' do
 
   describe 'remote node' do
     let(:node_obj) do
-      YAML.load_file(File.join(fixtures_dir, 'node_obj.yaml'))
+      YAML.unsafe_load_file(File.join(fixtures_dir, 'node_obj.yaml'))
     end
     let(:node_name) do
       'puppetdev.localdomain'
@@ -69,7 +69,7 @@ describe 'PuppetDebugger' do
     end
     describe 'use defaults when invalid' do
       let(:node_obj) do
-        YAML.load_file(File.join(fixtures_dir, 'invalid_node_obj.yaml'))
+        YAML.unsafe_load_file(File.join(fixtures_dir, 'invalid_node_obj.yaml'))
       end
       let(:node_name) do
         'invalid.localdomain'
