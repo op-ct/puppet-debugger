@@ -132,7 +132,7 @@ Style/IfUnlessModifier:
     - 'lib/puppet-debugger/hooks.rb'
 
 # Offense count: 1
-Style/MethodMissingSuper:
+Lint/MissingSuper:
   Exclude:
     - 'lib/puppet-debugger/debugger_code.rb'
 

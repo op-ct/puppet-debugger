@@ -8,14 +8,23 @@ stages:
   # - deploy
   #- web_deploy
 
-.puppet_def: &puppet_job_def
+.puppet_job_def_ruby27: &puppet_job_def_ruby27
   stage: test
   script:
     - rm -f Gemfile.lock
-    - gem update --system > /dev/null
-    - gem install bundler > /dev/null
+    - gem install bundler -v 2.4.22 > /dev/null
     - bundle install --without development validate
-    - bundle exec puppet module install puppetlabs-stdlib
+    - bundle exec puppet module install puppetlabs-stdlib --version 8.6.0
+    - bundle exec rspec
+  tags:
+    - ruby
+
+.puppet_job_def_ruby30plus: &puppet_job_def_ruby30plus
+  stage: test
+  script:
+    - rm -f Gemfile.lock
+    - bundle install --without development validate
+    - puppet module install puppetlabs-stdlib --version 9.4.1 
     - bundle exec rspec
   tags:
     - ruby
@@ -73,6 +82,12 @@ bump_and_tag:
 .ruby_32: &ruby32
   image: ruby:3.2
 
+.ruby_33: &ruby33
+  image: ruby:3.3
+
+.ruby_34: &ruby34
+  image: ruby:3.4
+
 # gem_production:
 #   image: ruby:2.7
 #   tags:
@@ -89,21 +104,28 @@ puppet_6_ruby27:
   allow_failure: false
   variables:
     PUPPET_GEM_VERSION: "~> 6.0"
-  <<: *puppet_job_def
+  <<: *puppet_job_def_ruby27
   <<: *ruby27
 
 puppet_7_ruby27:
   allow_failure: false
   variables:
     PUPPET_GEM_VERSION: "~> 7.0"
-  <<: *puppet_job_def
+  <<: *puppet_job_def_ruby27
   <<: *ruby27
 
 puppet_8_ruby3.2:
   allow_failure: true
   variables:
     PUPPET_GEM_VERSION: "~> 8.0"
-  <<: *puppet_job_def
+  <<: *puppet_job_def_ruby30plus
+  <<: *ruby32
+
+puppet_8_ruby3.4:
+  allow_failure: true
+  variables:
+    PUPPET_GEM_VERSION: "~> 8.2"
+  <<: *puppet_job_def_ruby30plus
   <<: *ruby32
 
 
