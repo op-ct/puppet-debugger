@@ -1,6 +1,11 @@
 # Puppet Debugger Changelog
 
 ## Unreleased
+## 1.4
+- Add support for puppet 8
+- Add support for ruby 3 (tested with 3.0-3.4)
+- Updates rdoc to 6.0 due to json issue
+
 ## 1.3
 - Fix failures when using Bolt 3.23+
 - Relax tty-pager constraints (for Bolt)
