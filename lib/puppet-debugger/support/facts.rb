@@ -29,11 +29,11 @@ module PuppetDebugger
       end
 
       def facter_os_name
-        ENV['DEBUGGER_FACTER_OS_NAME'] || 'Fedora'
+        ENV['DEBUGGER_FACTER_OS_NAME'] || 'Rocky'
       end
 
       def facter_os_version
-        ENV['DEBUGGER_FACTER_OS_VERSION'] || '23'
+        ENV['DEBUGGER_FACTER_OS_VERSION'] || '8.4'
       end
 
       def set_facts(value)
@@ -49,7 +49,8 @@ module PuppetDebugger
           message = <<~OUT
             Using filter: #{dynamic_facterdb_filter}
             Bad FacterDB filter, please change the filter so it returns a result set.
-            See https://github.com/camptocamp/facterdb/#with-a-string-filter
+            Use puppet debugger --no-facterdb to disable facterdb.
+            See https://github.com/voxpupuli/facterdb/#with-a-string-filter
           OUT
           raise PuppetDebugger::Exception::BadFilter, message: message
         end
