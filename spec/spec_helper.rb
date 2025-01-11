@@ -32,7 +32,8 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require 'rspec'
 require 'puppet-debugger'
-ENV['REPL_FACTERDB_FILTER'] = 'operatingsystem=Fedora and operatingsystemrelease=23 and architecture=x86_64 and facterversion=/^2\\.4/'
+
+ENV['REPL_FACTERDB_FILTER'] = 'os.name=Rocky and os.release.major=8 and architecture=x86_64 and facterversion=/^4/'
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].sort.each { |f| require f }

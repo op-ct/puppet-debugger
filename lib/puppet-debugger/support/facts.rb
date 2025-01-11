@@ -12,7 +12,7 @@ module PuppetDebugger
       end
 
       def default_facterdb_filter
-        "operatingsystem=#{facter_os_name} and operatingsystemrelease=#{facter_os_version} and architecture=x86_64 and facterversion=#{facter_version}"
+        "os.name=#{facter_os_name} and os.release.major=#{facter_os_version} and os.architecture=x86_64 and facterversion=#{facter_version}"
       end
 
       def facter_version
@@ -21,11 +21,7 @@ module PuppetDebugger
 
       # return the correct supported version of facter facts
       def default_facter_version
-        if Gem::Version.new(Puppet.version) >= Gem::Version.new(4.4)
-          '/^3\.1/'
-        else
-          '/^2\.4/'
-        end
+        '/^4/'
       end
 
       def facter_os_name
@@ -33,7 +29,7 @@ module PuppetDebugger
       end
 
       def facter_os_version
-        ENV['DEBUGGER_FACTER_OS_VERSION'] || '8.4'
+        ENV['DEBUGGER_FACTER_OS_VERSION'] || '8'
       end
 
       def set_facts(value)

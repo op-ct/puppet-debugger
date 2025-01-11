@@ -23,7 +23,7 @@ def run_container(image, puppet_version)
 end
 
 def ci_data
-  @ci_data ||= YAML.load_file(File.expand_path('.gitlab-ci.yml'))
+  @ci_data ||= YAML.load_file(File.expand_path('.gitlab-ci.yml'), aliases: true)
 end
 
 def matrix

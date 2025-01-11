@@ -43,6 +43,7 @@ describe :functions do
     debugger_output = /HELLO/
     debugger.handle_input("swapcase('hello')")
     expect(output.string).to match(debugger_output)
+    # did you run? bundle exec puppet module install puppetlabs-stdlib
   end
 
   it '#function_obj with native function' do
