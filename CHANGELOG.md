@@ -1,6 +1,10 @@
 # Puppet Debugger Changelog
 
 ## Unreleased
+
+## 1.5 (3/28/25)
+- Fix legacy facterdb fact issue
+
 ## 1.4
 - Add support for puppet 8
 - Add support for ruby 3 (tested with 3.0-3.4)
