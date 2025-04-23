@@ -142,7 +142,7 @@ module PuppetDebugger
       file
     end
 
-    # @return [Bolt::PuppetDB::Client] 
+    # @return [Bolt::PuppetDB::Client]
     def bolt_pdb_client
       @bolt_pdb_client ||=
         begin
@@ -196,7 +196,6 @@ module PuppetDebugger
     def puppet_lib_dir
       # returns something like "/Library/Ruby/Gems/2.0.0/gems/puppet-4.2.2/lib/puppet.rb"
       # "/Users/adam/.rbenv/versions/2.2.6/lib/ruby/gems/2.2.0/gems/puppet-4.9.4/lib"
-
       # this is only useful when returning a namespace with the functions
       @puppet_lib_dir ||= File.dirname(Puppet.method(:[]).source_location.first)
     end

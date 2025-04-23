@@ -17,7 +17,7 @@ describe 'support' do
   end
 
   let(:puppet_version) do
-    debugger.puppet_lib_dir.scan(debugger.mod_finder).flatten.last
+    Puppet.version
   end
 
   let(:manifest_file) do
@@ -41,7 +41,7 @@ describe 'support' do
   end
 
   it 'should return a puppet version' do
-    expect(puppet_version).to match(/puppet-\d\.\d+.\d/)
+    expect(puppet_version).to match(/\d\.\d+.\d/)
   end
 
   it 'should return lib dirs' do

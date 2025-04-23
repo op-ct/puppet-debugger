@@ -24,7 +24,7 @@ stages:
   script:
     - rm -f Gemfile.lock
     - bundle install --without development validate
-    - puppet module install puppetlabs-stdlib --version 9.4.1 
+    - bundle exec puppet module install puppetlabs-stdlib --version 9.4.1 
     - bundle exec rspec
   tags:
     - ruby
@@ -115,7 +115,7 @@ puppet_7_ruby27:
   <<: *ruby27
 
 puppet_8_ruby3.2:
-  allow_failure: true
+  allow_failure: false
   variables:
     PUPPET_GEM_VERSION: "~> 8.0"
   <<: *puppet_job_def_ruby30plus
@@ -126,6 +126,17 @@ puppet_8_ruby3.4:
   variables:
     PUPPET_GEM_VERSION: "~> 8.2"
   <<: *puppet_job_def_ruby30plus
+  <<: *ruby34
+
+openvox_puppet_8_ruby3.2:
+  allow_failure: false
+  variables:
+    USE_OPENVOX: true
+    PUPPET_GEM_VERSION: "8.15.0"
+  <<: *puppet_job_def_ruby30plus
   <<: *ruby32
+
+
+
 
 

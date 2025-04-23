@@ -1,6 +1,7 @@
 # Puppet Debugger Changelog
 
 ## Unreleased
+- Add support for openvox puppet
 
 ## 1.5 (3/28/25)
 - Fix legacy facterdb fact issue

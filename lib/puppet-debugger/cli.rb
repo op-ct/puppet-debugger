@@ -1,6 +1,9 @@
 # frozen_string_literal: true
-
-require 'puppet'
+begin
+  require 'puppet'
+rescue LoadError
+  abort "puppet-debugger requires either the 'puppet' or 'openvox' gem to be installed."
+end
 require 'readline'
 require 'json'
 require 'puppet-debugger/support'
@@ -16,6 +19,7 @@ module PuppetDebugger
     extend Forwardable
     attr_accessor :settings, :log_level, :in_buffer, :out_buffer, :html_mode, :extra_prompt, :bench
     attr_reader :source_file, :source_line_num, :hooks, :options
+
     def_delegators :hooks, :exec_hook, :add_hook, :delete_hook
     OUT_SYMBOL = ' => '
     def initialize(options = {})

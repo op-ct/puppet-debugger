@@ -1,17 +1,20 @@
 # frozen_string_literal: true
 
 source 'http://rubygems.org'
-gem 'awesome_print', '~> 1.7'
-gem 'facterdb', '>= 0.5.0'
+gem 'awesome_print', '~> 1.9'
+gem 'facterdb', '>= 2.0.0'
 gem 'pluginator', '~> 1.5.0'
-gem 'puppet', ENV['PUPPET_GEM_VERSION'] || '~> 8'
 gem 'rb-readline'
 gem 'table_print'
 gem 'tty-pager'
+if ENV['USE_OPENVOX']
+  gem 'openvox', git: 'https://github.com/OpenVoxProject/puppet.git', ref: ENV['PUPPET_GEM_VERSION'] || '8.15.0'
+else
+  gem 'puppet', ENV['PUPPET_GEM_VERSION'] || '~> 8'
+end
 #gem 'bolt' if Gem::Version(ENV['PUPPET_GEM_VERSION'])
 
 group :test, :development do
-  # ruby versions prior to 2.0 cannot install json_pure 2.0.2+
   gem 'bundler'
   gem 'pry'
   gem 'puppet-debugger', path: './'
