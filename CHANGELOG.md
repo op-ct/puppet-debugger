@@ -1,7 +1,11 @@
 # Puppet Debugger Changelog
 
 ## Unreleased
+
+## 1.6 (4/23/25)
 - Add support for openvox puppet
+
+This drops the require of puppet gem because of the recent changes in the community opensource version and now closed source legacy version.  Puppet or Openvox gem is still required just not stated in the gemspec file.
 
 ## 1.5 (3/28/25)
 - Fix legacy facterdb fact issue
