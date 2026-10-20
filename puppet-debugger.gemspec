@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'lib/puppet-debugger/version'
-require 'date'
 
 Gem::Specification.new do |s|
   s.name = 'puppet-debugger'
@@ -19,7 +18,6 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
   s.require_paths = ['lib']
   s.authors = ['Corey Osman']
-  s.date = DateTime.now.strftime('%Y-%m-%d')
   s.description = 'A interactive command line tool for evaluating and debugging the puppet language'
   s.email = 'corey@nwops.io'
   s.extra_rdoc_files = [
@@ -27,20 +25,16 @@ Gem::Specification.new do |s|
     'LICENSE.txt',
     'README.md'
   ]
+  # Ruby 2.7 is the oldest Ruby shipped with a supported Puppet (7); no Ruby 3 syntax is used
   s.required_ruby_version = '>= 2.7'
   s.homepage = 'https://gitlab.com/puppet-debugger/puppet-debugger'
   s.licenses = ['MIT']
   s.rubygems_version = '2.4.5.1'
   s.summary = 'A repl based debugger for the puppet language'
-  s.add_runtime_dependency('awesome_print', ['~> 1.7'])
-  s.add_runtime_dependency('bundler')
-  s.add_runtime_dependency('facterdb', ['>= 0.4.0'])
-  s.add_runtime_dependency('pluginator', ['~> 1.5.0'])
-  # s.add_runtime_dependency('puppet', ['>= 6']) - since there is now puppet and openvox, this is now a grey dependency
-  # s.add_runtime_dependency('bolt', ['>= 2.42.0'])
-  s.add_runtime_dependency('rb-readline', ['>= 0.5.5'])
-  s.add_runtime_dependency('table_print', ['>= 1.0.0'])
-  s.add_runtime_dependency('tty-pager', ['~> 0.14'])
+  # No runtime dependencies: the debugger uses only Ruby's standard library and the
+  # puppet or openvox gem, which is not declared because either one satisfies it
+  # (puppet >= 7 or openvox >= 8). Keep it that way; see README "Installation".
+  s.add_development_dependency('facterdb', ['>= 2.0.0'])
   s.add_development_dependency('rdoc', ['>= 6.0'])
   s.add_development_dependency('rspec', ['>= 3.6'])
 end

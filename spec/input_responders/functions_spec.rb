@@ -68,7 +68,7 @@ describe :functions do
     file, = Puppet::Functions.method(:create_function).source_location
     dir = File.dirname(file)
     f_obj = plugin.function_obj(File.join(dir, 'functions', 'include.rb'))
-    expect(f_obj[:mod_name]).to match(/puppet-.*/)
+    expect(f_obj[:mod_name]).to match(/(puppet|openvox)-.*/)
     expect(f_obj[:name]).to eq('include')
     expect(f_obj[:full_name]).to eq('include')
     expect(f_obj[:summary]).to be_nil

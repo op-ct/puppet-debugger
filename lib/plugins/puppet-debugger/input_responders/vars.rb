@@ -12,13 +12,13 @@ module PuppetDebugger
         filter = args
         unless filter.empty?
           parameters = resource_parameters(debugger.catalog.resources, filter)
-          return parameters.ai(sort_keys: true, indent: -1)
+          return format_value(parameters)
         end
         # remove duplicate variables that are also in the facts hash
         variables = debugger.scope.to_hash.delete_if { |key, _value| debugger.node.facts.values.key?(key) }
         variables['facts'] = 'removed by the puppet-debugger' if variables.key?('facts')
-        output = 'Facts were removed for easier viewing'.ai + "\n"
-        output + variables.ai(sort_keys: true, indent: -1)
+        output = "Facts were removed for easier viewing\n".warning
+        output + format_value(variables)
       end
 
       def resource_parameters(resources, filter = [])

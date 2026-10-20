@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 require 'puppet-debugger/input_responder_plugin'
-require 'table_print'
 require 'fileutils'
-require 'bundler'
 
 module PuppetDebugger
   module InputResponders
@@ -16,7 +14,11 @@ module PuppetDebugger
 
       def run(args = [])
         filter = args.first || ''
-        TablePrint::Printer.table_print(sorted_list(filter), %i[full_name mod_name])
+        rows = sorted_list(filter)
+        width = (rows.map { |r| r[:full_name].length } + ['FULL_NAME'.length]).max
+        lines = [format('%-*s | %s', width, 'FULL_NAME', 'MOD_NAME'), "#{'-' * (width + 1)}|#{'-' * 9}"]
+        rows.each { |r| lines << format('%-*s | %s', width, r[:full_name], r[:mod_name]) }
+        lines.join("\n")
       end
 
       def sorted_list(filter = '')
@@ -43,12 +45,19 @@ module PuppetDebugger
         functions
       end
 
-      # @return [String] - the current module directory or directory that contains a gemfile
+      # @return [String] - the nearest directory at or above the working directory that
+      #   holds a metadata.json or a Gemfile, otherwise the working directory
       def current_module_dir
         @current_module_dir ||= begin
-          File.dirname(::Bundler.default_gemfile)
-                                rescue ::Bundler::GemfileNotFound
-                                  Dir.pwd
+          dir = Dir.pwd
+          loop do
+            break dir if File.exist?(File.join(dir, 'metadata.json')) || File.exist?(File.join(dir, 'Gemfile'))
+
+            parent = File.dirname(dir)
+            break Dir.pwd if parent == dir
+
+            dir = parent
+          end
         end
       end
 
@@ -85,8 +94,8 @@ module PuppetDebugger
         match = file.match('\/(?<mod>[\w\-\.]+)\/(lib|functions|manifests)')
         summary_match = File.read(file, encoding: 'UTF-8').match(/@summary\s(.*)/)
         summary = summary_match[1] if summary_match
-        # fetch the puppet version if this is a function from puppet gem
-        captures = file.match(/(puppet-[\d\.]+)/)
+        # fetch the puppet version if this is a function from the puppet or openvox gem
+        captures = file.match(/((?:puppet|openvox)-[\d\.]+)/)
         file_namespace = captures[1] if captures
         mod_name = file_namespace || match[:mod]
         full_name = namespace.nil? || namespace.empty? ? name : name.prepend("#{namespace}::")

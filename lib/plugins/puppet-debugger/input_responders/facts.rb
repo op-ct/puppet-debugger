@@ -10,7 +10,7 @@ module PuppetDebugger
 
       def run(_args = [])
         variables = debugger.node.facts.values
-        variables.ai(sort_keys: true, indent: -1)
+        format_value(variables)
       end
     end
   end

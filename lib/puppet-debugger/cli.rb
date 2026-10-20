@@ -4,15 +4,21 @@ begin
 rescue LoadError
   abort "puppet-debugger requires either the 'puppet' or 'openvox' gem to be installed."
 end
-require 'readline'
+begin
+  require 'readline'
+rescue LoadError
+  # Ruby built without the readline extension; reline ships with Ruby >= 2.7 and has the same API
+  require 'reline'
+  Readline = Reline unless defined?(Readline)
+end
 require 'json'
+require 'optparse'
 require 'puppet-debugger/support'
-require 'pluginator'
 require 'puppet-debugger/hooks'
 require 'forwardable'
 require 'plugins/puppet-debugger/input_responders/functions'
 require 'plugins/puppet-debugger/input_responders/datatypes'
-require 'tty-pager'
+require 'puppet-debugger/pager'
 module PuppetDebugger
   class Cli
     include PuppetDebugger::Support
@@ -36,16 +42,13 @@ module PuppetDebugger
       @source_file = options[:source_file] || nil
       @source_line_num = options[:source_line] || nil
       @in_buffer = options[:in_buffer] || $stdin
-      Readline.input = @in_buffer
-      Readline.output = @out_buffer
+      # the readline extension and reline accept only real IO objects, not StringIO
+      Readline.input = @in_buffer if @in_buffer.is_a?(IO)
+      Readline.output = @out_buffer if @out_buffer.is_a?(IO)
       Readline.completion_append_character = ''
       Readline.basic_word_break_characters = ' '
       Readline.completion_proc = command_completion
-      AwesomePrint.defaults = {
-        html: @html_mode,
-        sort_keys: true,
-        indent: 2
-      }
+      Puppet[:color] = 'html' if @html_mode
       # Catch control-c sequences
       trap('SIGINT') do
         # control-d
@@ -138,13 +141,21 @@ module PuppetDebugger
       result
     end
 
-    def responder_list
-      Pluginator.find(PuppetDebugger)
+    # @param value [Object] - a value to display
+    # @return [String] the value in Puppet syntax, coloured when the output is a terminal
+    #   or html_mode is set (see PuppetDebugger::Formatter)
+    def format_value(value)
+      text = PuppetDebugger::Formatter.format(value)
+      color_output? ? PuppetDebugger::Formatter::Color.apply(text) : text
     end
 
-    # @return [TTY::Pager] the pager object, disable if CI or testing is present
+    def color_output?
+      html_mode || (out_buffer.respond_to?(:tty?) && out_buffer.tty?)
+    end
+
+    # @return [PuppetDebugger::Pager] the pager object, disable if CI or testing is present
     def pager
-      @pager ||= TTY::Pager.new(output: out_buffer, enabled: pager_enabled?)
+      @pager ||= PuppetDebugger::Pager.new(output: out_buffer, enabled: pager_enabled?)
     end
 
     def pager_enabled?
@@ -159,9 +170,8 @@ module PuppetDebugger
     def handle_output(output)
       return if output.nil?
 
-      if pager_enabled? && output.lines.count >= TTY::Screen.height
-        output << "\n"
-        pager.page(output)
+      if pager_enabled? && output.lines.count >= PuppetDebugger::Pager.height
+        pager.page("#{output}\n")
       else
         out_buffer.puts(output) unless output.empty?
       end
@@ -186,7 +196,7 @@ module PuppetDebugger
             result = puppet_eval(input)
             @last_item = result
             o = normalize_output(result)
-            o.nil? ? '' : o.ai
+            o.nil? ? '' : format_value(o)
           end
         rescue PuppetDebugger::Exception::InvalidCommand => e
           e.message.fatal
@@ -297,14 +307,37 @@ module PuppetDebugger
     # if from stdin, the repl will process the input and exit
     # if from a file, the repl will process the file and continue to prompt
     # @param [Hash] puppet scope object
-    def self.start(options = { scope: nil })
-      opts = Trollop.options do
-        opt :play, 'Url or file to load from', required: false, type: String
-        opt :run_once, 'Evaluate and quit', required: false, default: false
-        opt :node_name, 'Remote Node to grab facts from', required: false, type: String
-        opt :catalog, 'Import a catalog file to inspect', required: false, type: String
-        opt :quiet, 'Do not display banner', required: false, default: false
+    # @param args [Array<String>] command line arguments; options are removed from it
+    # @return [Hash] the options for Cli.start
+    def self.parse_options(args = ARGV)
+      opts = { play: nil, facts: nil, run_once: false, node_name: nil, catalog: nil, quiet: false }
+      parser = OptionParser.new do |o|
+        o.banner = 'Usage: puppet-debugger [options] [FILE]'
+        o.on('-p', '--play URL', 'Url or file to load from') { |v| opts[:play] = v }
+        o.on('-f', '--facts FILE', "JSON or YAML file of facts to use instead of this machine's") { |v| opts[:facts] = v }
+        o.on('-r', '--run-once', 'Evaluate and quit') { opts[:run_once] = true }
+        o.on('-n', '--node-name CERTNAME', 'Remote Node to grab facts from') { |v| opts[:node_name] = v }
+        o.on('-c', '--catalog FILE', 'Import a catalog file to inspect') { |v| opts[:catalog] = v }
+        o.on('-q', '--quiet', 'Do not display banner') { opts[:quiet] = true }
+        o.on('-v', '--version', 'Print the version and exit') do
+          puts PuppetDebugger::VERSION
+          exit
+        end
+        o.on('-h', '--help', 'Show this message') do
+          puts o
+          exit
+        end
       end
+      parser.parse!(args)
+      opts
+    rescue OptionParser::ParseError => e
+      warn "Error: #{e.message}."
+      warn 'Try --help for help.'
+      exit 255
+    end
+
+    def self.start(options = { scope: nil })
+      opts = parse_options
       if !STDIN.tty? && !STDIN.closed?
         options[:run_once] = true
         options[:quiet] = true

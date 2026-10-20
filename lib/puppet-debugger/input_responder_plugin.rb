@@ -8,9 +8,35 @@ module PuppetDebugger
   class InputResponderPlugin
     include Singleton
     extend Forwardable
+
+    # Plugin files live at this path under a lib directory, in this gem, in a plugin gem,
+    # or on RUBYLIB. Gem.find_files searches installed gems and $LOAD_PATH for the glob.
+    PLUGIN_GLOB = 'plugins/puppet-debugger/input_responders/*.rb'
+
+    # @return [Array<Class>] every subclass defined so far, in definition order
+    def self.registry
+      InputResponderPlugin.instance_variable_get(:@registry) ||
+        InputResponderPlugin.instance_variable_set(:@registry, [])
+    end
+
+    def self.inherited(subclass)
+      super
+      registry << subclass unless registry.include?(subclass)
+    end
+
+    # Requires every plugin file RubyGems or the load path can see, once, and
+    # returns the plugin classes sorted by name.
+    # @return [Array<Class>]
+    def self.load_plugins
+      unless InputResponderPlugin.instance_variable_get(:@plugins_loaded)
+        Gem.find_files(PLUGIN_GLOB).map { |f| File.expand_path(f) }.uniq.each { |file| require file }
+        InputResponderPlugin.instance_variable_set(:@plugins_loaded, true)
+      end
+      registry.sort_by(&:name)
+    end
     attr_accessor :debugger
     def_delegators :debugger, :scope, :node, :environment, :loaders, :puppet_environment,
-                   :add_hook, :handle_input, :delete_hook, :puppet_lib_dir
+                   :add_hook, :handle_input, :delete_hook, :puppet_lib_dir, :format_value
     def_delegators :scope, :compiler, :catalog
     def_delegators :node, :facts
 

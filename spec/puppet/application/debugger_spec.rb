@@ -67,7 +67,7 @@ describe Puppet::Application::Debugger do
 
     it 'assign variable' do
       allow(debugger).to receive(:options).and_return(code: "$var1 = 'blah'", quiet: true, run_once: true, use_facterdb: true)
-      expect { debugger.run_command }.to output(/"blah"/).to_stdout
+      expect { debugger.run_command }.to output(/'blah'/).to_stdout
     end
 
     describe 'can reset correctly' do
@@ -83,7 +83,7 @@ describe Puppet::Application::Debugger do
 
       it 'assign variable' do
         allow(debugger).to receive(:options).and_return(code: input, quiet: true, run_once: true, use_facterdb: true)
-        expect { debugger.run_command }.to output(/\"111111\"/).to_stdout
+        expect { debugger.run_command }.to output(/'111111'/).to_stdout
       end
     end
   end
@@ -96,7 +96,7 @@ describe Puppet::Application::Debugger do
 
     it 'assign variable' do
       allow(debugger).to receive(:options).and_return(code: "$var1 = 'blah'", quiet: true, run_once: true, use_facterdb: false)
-      expect { debugger.run_command }.to output(/"blah"/).to_stdout
+      expect { debugger.run_command }.to output(/'blah'/).to_stdout
     end
 
     describe 'import a catalog' do
@@ -127,7 +127,7 @@ describe Puppet::Application::Debugger do
 
       it 'assign variable' do
         allow(debugger).to receive(:options).and_return(code: input, quiet: true, run_once: true, use_facterdb: false)
-        expect { debugger.run_command }.to output(/\"111111\"/).to_stdout
+        expect { debugger.run_command }.to output(/'111111'/).to_stdout
       end
     end
   end

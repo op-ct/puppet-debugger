@@ -9,7 +9,7 @@ module PuppetDebugger
       COMMAND_GROUP = :scope
 
       def run(_args = [])
-        debugger.known_resource_types.ai(sort_keys: true, indent: -1)
+        format_value(debugger.known_resource_types)
       end
     end
   end

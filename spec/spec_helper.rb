@@ -33,7 +33,8 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rspec'
 require 'puppet-debugger'
 
-ENV['REPL_FACTERDB_FILTER'] = 'os.name=Rocky and os.release.major=8 and architecture=x86_64 and facterversion=/^4/'
+# the specs expect facterdb's Rocky 8 fact set (fqdn foo.example.com); a filter in the environment selects facterdb
+ENV['DEBUGGER_FACTERDB_FILTER'] = 'os.name=Rocky and os.release.major=8 and os.architecture=x86_64 and facterversion=/^4/'
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].sort.each { |f| require f }

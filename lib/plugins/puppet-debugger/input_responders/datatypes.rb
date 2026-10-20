@@ -11,7 +11,7 @@ module PuppetDebugger
       def run(args = [])
         filter = args
         datatypes = find_datatypes(all_data_types.sort, filter)
-        datatypes.ai
+        format_value(datatypes)
       end
 
       def find_datatypes(datatypes, filter = [])

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'puppet/pops'
-require 'facterdb'
 require 'tempfile'
 
 # load all the generators found in the generators directory

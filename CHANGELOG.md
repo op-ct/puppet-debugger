@@ -1,6 +1,27 @@
 # Puppet Debugger Changelog
 
-## Unreleased
+## Unreleased (proposed 2.0.0: the output format changes)
+- No runtime gem dependencies remain; Ruby >= 2.7 and Puppet >= 7 (or OpenVox 8) are required. Puppet 6
+  and Ruby 2.4-2.6 are no longer supported.
+- Replace the vendored Trollop option parser with optparse; `puppet-debugger --help` output changes
+  and `--version` is added.
+- facterdb is now optional. Without a scope, facts come from `--facts FILE` (JSON or YAML), from
+  facterdb when `--facterdb-filter` or `DEBUGGER_FACTERDB_FILTER` is given (the gem must be
+  installed), or from this machine. `puppet debugger` with no options uses this machine's facts.
+- Replace awesome_print with Puppet's own StringConverter (`PuppetDebugger::Formatter`). Values now print
+  in Puppet syntax: single-quoted strings, `undef` for nil, no `[0]` array index labels, left-aligned
+  keys, types and resource references as written in manifests. Colour comes from `Puppet::Util::Colors`
+  and follows the `color` setting. Plugins should call `format_value(obj)` instead of `obj.ai`.
+- Drop pluginator. Plugins are found with `Gem.find_files` under the same
+  `plugins/puppet-debugger/input_responders/` layout, so existing plugin gems keep working.
+- Drop table_print; the `functions` listing is formatted in place.
+- Drop the bundler runtime dependency. The `functions` command finds the current module by walking up
+  to the nearest `metadata.json` or `Gemfile` instead of asking Bundler.
+- Drop rb-readline. The debugger now uses Ruby's readline extension (GNU readline or libedit) and
+  falls back to reline where the extension is missing.
+- Replace tty-pager with a built-in pager (`PAGER`, default `less -R`). Removes the strings gem and its
+  unicode-display_width `< 3.0` pin, which made the gem unloadable inside OpenBolt
+  (`Gem::ConflictError: Unable to activate strings-0.2.1`).
 
 ## 1.6 (4/23/25)
 - Add support for openvox puppet

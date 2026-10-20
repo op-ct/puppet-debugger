@@ -32,6 +32,24 @@ module PuppetDebugger
       end
     end
 
+    class FacterDBNotInstalled < FatalError
+      def message
+        <<~OUT
+          The facterdb gem is needed for facterdb facts but is not installed.
+          Install it with: #{data[:install]}
+          Or use --facts FILE to read facts from a file, or --no-facterdb to use this machine's facts.
+        OUT
+      end
+    end
+
+    class BadFactsFile < FatalError
+      def message
+        <<~OUT
+          Could not read facts from #{data[:path]}: #{data[:message] || 'expected a JSON or YAML hash of facts'}
+        OUT
+      end
+    end
+
     class UndefinedNode < FatalError
       def message
         <<~OUT

@@ -11,7 +11,10 @@ module PuppetDebugger
       # displays the facterdb filter
       # @param [Array] - args is not used
       def run(_args = [])
-        debugger.dynamic_facterdb_filter.ai
+        out = format_value(debugger.dynamic_facterdb_filter)
+        return out if debugger.load_facterdb
+
+        "#{out}\n#{'facterdb gem is not installed; facts come from this machine or --facts FILE'.warning}"
       end
     end
   end

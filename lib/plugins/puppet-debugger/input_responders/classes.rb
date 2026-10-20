@@ -11,7 +11,7 @@ module PuppetDebugger
       def run(args = [])
         filter = args
         classes = find_classes(debugger.catalog.classes, filter)
-        classes.ai
+        format_value(classes)
       end
 
       def find_classes(classes, filter = [])

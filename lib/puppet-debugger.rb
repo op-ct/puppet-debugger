@@ -2,9 +2,7 @@
 
 require 'puppet-debugger/cli'
 require 'puppet-debugger/version'
-require 'awesome_print'
-require 'awesome_print/ext/awesome_puppet'
-require 'puppet-debugger/trollop'
+require 'puppet-debugger/formatter'
 require 'puppet/util/log'
 require 'puppet-debugger/debugger_code'
 require 'puppet-debugger/support/errors'

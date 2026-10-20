@@ -3,7 +3,6 @@
 require 'spec_helper'
 require 'puppet-debugger'
 require 'puppet-debugger/plugin_test_helper'
-require 'pluginator'
 
 describe :vars do
   include_examples 'plugin_tests'
@@ -48,8 +47,8 @@ describe :vars do
     it 'ls test' do
       debugger.handle_input(input)
       out = plugin.run(['test'])
-      expect(out).to include('"param1"')
-      expect(out).to include('"param2"')
+      expect(out).to include("'param1'")
+      expect(out).to include("'param2'")
     end
   end
 end

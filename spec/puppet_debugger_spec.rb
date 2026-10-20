@@ -229,7 +229,7 @@ describe 'PuppetDebugger' do
 
     it 'handles multi array' do
       debugger.handle_input(input)
-      expect(output.string.count('[')).to be >= 17
+      expect(output.string.count('[')).to eq(6)
     end
   end
 

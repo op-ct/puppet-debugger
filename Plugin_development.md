@@ -123,6 +123,10 @@ the following directory `lib/plugins/puppet-debugger/input_responders/`
 If you are packaging as a gem you must still provide this directory layout in addition to whatever other supporting files
 are also in your gem.
 
+Discovery uses `Gem.find_files('plugins/puppet-debugger/input_responders/*.rb')`, which searches every installed
+gem (or, under Bundler, every gem in the bundle) and every directory on `$LOAD_PATH`, including `RUBYLIB`. Each file
+found is required, and every class that inherits from `PuppetDebugger::InputResponderPlugin` is registered as a plugin.
+
 ## Run Method
 
 Your plugin must override the run method.  When your plugin is executed, an array is passed as the args variable.

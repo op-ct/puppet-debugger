@@ -24,7 +24,7 @@ module PuppetDebugger
 
             loaded_types << t.name.to_s
           end
-          loaded_types.ai
+          format_value(loaded_types)
         rescue Puppet::Error => e
           puts e.message.red
           Puppet.info(e.message)

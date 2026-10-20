@@ -57,11 +57,9 @@ module PuppetDebugger
         plugins.map(&:details)
       end
 
+      # @return [Array<Class>] all input responder plugin classes, loading them on first use
       def self.plugins
-        debug_plugins = Pluginator.find('puppet-debugger')
-        debug_plugins['input_responders']
-      rescue NoMethodError
-        raise PuppetDebugger::Exception::InvalidCommand.new(message: 'Unsupported gem version.  Please update with: gem update --system')
+        InputResponderPlugin.load_plugins
       end
 
       # @param name [String] - the name of the command that is associated with a plugin

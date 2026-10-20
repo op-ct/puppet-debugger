@@ -14,12 +14,11 @@ inherit_from: .rubocop_todo.yml
 # See https://docs.rubocop.org/rubocop/configuration
 AllCops:
   StyleGuideBaseURL: https://rubystyle.guide
-  TargetRubyVersion: 2.4
+  TargetRubyVersion: 2.7
   Exclude:
     - 'spec/fixtures/**/*'
     - 'vendor/**/*'
     - 'test_matrix.rb'
-    - 'lib/puppet-debugger/trollop.rb'
 Style/ClassAndModuleChildren:
   Exclude:
     - 'lib/puppet-debugger/monkey_patches.rb'

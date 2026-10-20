@@ -4,7 +4,7 @@ require 'spec_helper'
 
 describe 'facts' do
   let(:debugger) do
-    PuppetDebugger::Cli.new(out_buffer: output)
+    PuppetDebugger::Cli.new(out_buffer: output, use_facterdb: true)
   end
 
   let(:puppet_version) do

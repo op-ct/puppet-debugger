@@ -1,14 +1,8 @@
 # frozen_string_literal: true
 
 source 'http://rubygems.org'
-gem 'awesome_print', '~> 1.9'
-gem 'facterdb', '>= 2.0.0'
-gem 'pluginator', '~> 1.5.0'
-gem 'rb-readline'
-gem 'table_print'
-gem 'tty-pager'
 if ENV['USE_OPENVOX']
-  gem 'openvox', git: 'https://github.com/OpenVoxProject/puppet.git', ref: ENV['PUPPET_GEM_VERSION'] || '8.15.0'
+  gem 'openvox', ENV['PUPPET_GEM_VERSION'] || '~> 8'
 else
   gem 'puppet', ENV['PUPPET_GEM_VERSION'] || '~> 8'
 end
@@ -16,6 +10,7 @@ end
 
 group :test, :development do
   gem 'bundler'
+  gem 'facterdb', '>= 2.0.0'
   gem 'pry'
   gem 'puppet-debugger', path: './'
   gem 'rake', '~> 13.0'

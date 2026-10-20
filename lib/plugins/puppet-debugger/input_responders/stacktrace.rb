@@ -11,7 +11,7 @@ module PuppetDebugger
       # @return [Array]- returns a array of pp files that are involved in the stacktrace
       def run(_args = [])
         s = stacktrace
-        s.empty? ? 'stacktrace not available'.warning : s.ai
+        s.empty? ? 'stacktrace not available'.warning : format_value(s)
       end
 
       # @return [Array] - an array of files with line numbers

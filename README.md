@@ -35,14 +35,55 @@ A interactive command line tool for evaluating and debugging the puppet language
 Please visit https://docs.puppet-debugger.com for more info.
 
 ## Compatibility
-Requires Puppet 5.5+, ruby 2.4+
+Requires Puppet 7+ or OpenVox 8+, and Ruby 2.7+. The gem has no runtime dependencies beyond
+Ruby's standard library and the puppet or openvox gem, so it installs cleanly into the Ruby
+shipped with the OpenVox agent, OpenBolt, and Puppet all-in-one packages.
 
 ## Production usage
-The puppet debugger is a developer tool that should only be used when writing puppet code.  Although it might seem useful
-to install on your production puppet master. Please do not install because of the puppet-debugger gem dependencies that might conflict with your existing environment.
+The puppet debugger is a developer tool that should only be used when writing puppet code. Although it might seem useful
+to install on your production puppet master, please do not; `debug::break()` refuses to start without a terminal, but
+the gem has no business on a server.
 
 ## Installation
-`gem install puppet-debugger`
+With a system Ruby:
+
+    gem install puppet-debugger
+
+### All-in-one (AIO) packages
+The OpenVox agent and OpenBolt packages ship their own Ruby under `/opt/puppetlabs/puppet/bin` and
+`/opt/puppetlabs/bolt/bin`. Install the gem with that Ruby's `gem` command and `--user-install`, which
+puts it in your home directory (`~/.local/share/gem/ruby/<version>`), the one gem location the
+`puppet` and `bolt` wrappers leave on the search path:
+
+    /opt/puppetlabs/puppet/bin/gem install --user-install puppet-debugger
+    /opt/puppetlabs/bolt/bin/gem install --user-install puppet-debugger
+
+On an isolated network, download `puppet-debugger-<version>.gem` from rubygems.org elsewhere, copy
+the one file across, and add `--local`:
+
+    /opt/puppetlabs/bolt/bin/gem install --user-install --local puppet-debugger-<version>.gem
+
+Then `puppet debugger` and `debug::break()` in Bolt plans work through the normal `puppet` and `bolt`
+commands. Optional extras, installed the same way: `facterdb` for `--facterdb-filter`.
+
+### Beside other gems
+The gem declares no dependencies, so it cannot conflict with gems you have installed into the same
+user directory, and other gems' constraints cannot make it unloadable. Three layouts are supported:
+
+1. The RubyGems user directory, as above. Works with both AIO wrappers.
+2. A per-project Bundler setup on the Bolt AIO that reuses the AIO's gems: in the project,
+   `bundle config set --local path.system true`, set `GEM_HOME=$PWD/vendor/gems` in the environment,
+   `bundle install --prefer-local` (with network), then `bundle cache`, and on the isolated host
+   `bundle install --local`. Run with `bundle exec /opt/puppetlabs/bolt/bin/bolt ...`, not through
+   `/usr/local/bin/bolt`, which clears `GEM_HOME`.
+3. A conventional `Gemfile` for rspec-puppet or onceover, where `gem 'puppet-debugger'` is listed like any
+   other gem and everything runs under `bundle exec`.
+
+### Facts
+A session started with `puppet debugger` or `puppet-debugger` needs facts for the node it pretends to be.
+By default they are gathered from the machine you are on. `--facts FILE` reads them from a JSON or YAML
+file instead (the output of `facter --json` or `puppet facts`, a cached facts file, or a facterdb fixture).
+`--facterdb-filter FILTER` uses the optional facterdb gem to try your code against another operating system.
 
 
 ## Web demo
@@ -63,9 +104,9 @@ and see what it would actual do when compiling a resource.
 
 Example Usage
 ```
-Ruby Version: 2.6.5
-Puppet Version: 6.17.0
-Puppet Debugger Version: 1.0.0
+Ruby Version: 3.2.5
+Puppet Version: 8.28.0
+Puppet Debugger Version: 2.0.0
 Created by: NWOps <corey@nwops.io>
 Type "commands" for a list of debugger commands
 or "help" to show the help screen.
@@ -73,21 +114,21 @@ or "help" to show the help screen.
 
 1:>> $os
  => {
-  "architecture" => "x86_64",
-        "family" => "RedHat",
-      "hardware" => "x86_64",
-          "name" => "Fedora",
-       "release" => {
-     "full" => "23",
-    "major" => "23"
+  'architecture' => 'x86_64',
+  'family' => 'RedHat',
+  'hardware' => 'x86_64',
+  'name' => 'Fedora',
+  'release' => {
+    'full' => '42',
+    'major' => '42'
   },
-       "selinux" => {
-       "config_mode" => "permissive",
-     "config_policy" => "targeted",
-      "current_mode" => "permissive",
-           "enabled" => true,
-          "enforced" => false,
-    "policy_version" => "29"
+  'selinux' => {
+    'config_mode' => 'permissive',
+    'config_policy' => 'targeted',
+    'current_mode' => 'permissive',
+    'enabled' => true,
+    'enforced' => false,
+    'policy_version' => '29'
   }
 }
 2:>> 

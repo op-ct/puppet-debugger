@@ -24,6 +24,10 @@ class Puppet::Application::Debugger < Puppet::Application
 
   option('--no-facterdb') { |_arg| options[:use_facterdb] = false }
 
+  option('--facts FILE') do |arg|
+    options[:facts] = arg
+  end
+
   option('--log-level LEVEL', '-l') do |arg|
     Puppet::Util::Log.level = arg.to_sym
   end
@@ -60,9 +64,9 @@ class Puppet::Application::Debugger < Puppet::Application
 
       USAGE
       -----
-      puppet debugger [--help] [--version] [-e|--execute CODE] [--facterdb-filter FILTER]
-                      [--test] [--no-facterdb] [-q|--quiet] [-p|--play URL] [-s|--stdin]
-                      [-r|--run-once] [-n|--node-name CERTNAME]
+      puppet debugger [--help] [--version] [-e|--execute CODE] [--facts FILE]
+                      [--facterdb-filter FILTER] [--no-facterdb] [--test] [-q|--quiet]
+                      [-p|--play URL] [-s|--stdin] [-r|--run-once] [-n|--node-name CERTNAME]
 
 
       DESCRIPTION
@@ -106,19 +110,21 @@ class Puppet::Application::Debugger < Puppet::Application
       * --execute:
         Execute a specific piece of Puppet code
 
-      * --facterdb-filter
-        Disables the usage of the current node level facts and uses cached facts
-        from facterdb.  Specifying a filter will override the default facterdb filter.
-        Not specifiying a filter will use the default CentOS based filter.
-        This will greatly speed up the start time of the debugger since
-        you are using cached facts.  Additionally, using facterdb also allows you
-        to play with many other operating system facts that you might not have access
-        to.  For example filters please see the facterdb docs.
+      * --facts
+        Read the node's facts from FILE instead of gathering them from this machine.
+        FILE is JSON or YAML holding either a plain facts hash (the output of
+        `facter --json`, or a facterdb fixture) or a Puppet facts document with
+        name and values (the output of `puppet facts`, or a cached facts file).
 
-        See https://github.com/camptocamp/facterdb for more info
+      * --facterdb-filter
+        Use cached facts from the facterdb gem instead of this machine's facts, selected
+        by FILTER; see https://github.com/voxpupuli/facterdb for the filter syntax.
+        Lets you try code against other operating systems. The facterdb gem must be
+        installed; it is not a dependency of puppet-debugger.
+        The filter can also be set with the DEBUGGER_FACTERDB_FILTER environment variable.
 
       * --no-facterdb
-        Use the facts found on this node instead of cached facts from facterdb.
+        Use the facts found on this node even when DEBUGGER_FACTERDB_FILTER is set.
 
       * --log-level
         Set the Puppet log level which can be very useful with using the debugger.
@@ -165,6 +171,7 @@ class Puppet::Application::Debugger < Puppet::Application
           $ echo "notice('hello, can you hear me?')" | puppet debugger --test
           $ echo "notice('hello, can you hear me?')" | puppet debugger --stdin
           $ puppet debugger --execute "notice('hello')"
+          $ puppet debugger --facts /opt/puppetlabs/puppet/cache/facts.json
           $ puppet debugger --facterdb-filter 'facterversion=/^2.4\./ and operatingsystem=Debian'
           $ puppet debugger --play https://gist.github.com/logicminds/4f6bcfd723c92aad1f01f6a800319fa4
           $ puppet debugger --facterdb-filter 'facterversion=/^2.4\./ and operatingsystem=Debian' \\
@@ -186,9 +193,9 @@ class Puppet::Application::Debugger < Puppet::Application
 
   def initialize(command_line = Puppet::Util::CommandLine.new)
     @command_line = CommandLineArgs.new(command_line.subcommand_name, command_line.args.dup)
-    @options = { use_facterdb: true, play: nil, run_once: false,
+    @options = { use_facterdb: nil, play: nil, run_once: false,
                  node_name: nil, quiet: false, help: false, scope: nil,
-                 catalog: nil }
+                 catalog: nil, facts: nil }
     @use_stdin = false
     begin
       require 'puppet-debugger'
@@ -223,7 +230,7 @@ class Puppet::Application::Debugger < Puppet::Application
       options[:play] = manifest
     end
     begin
-      if !options[:use_facterdb] && options[:node_name].nil?
+      if !options[:use_facterdb] && options[:node_name].nil? && options[:facts].nil?
         debug_environment = create_environment(nil)
         Puppet.notice('Gathering node facts...')
         node = create_node(debug_environment)

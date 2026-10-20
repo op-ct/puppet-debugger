@@ -117,9 +117,9 @@ describe :play do
       it do
         plugin.play_back_string(input)
         expect(output.string).to include("$var1 = 'test'")
-        expect(output.string).to include('"test"')
+        expect(output.string).to include("'test'")
         expect(output.string).to include("$var2 = 'test2'")
-        expect(output.string).to include('"test2"')
+        expect(output.string).to include("'test2'")
       end
     end
     describe '1 lines' do
@@ -129,7 +129,7 @@ describe :play do
       it do
         plugin.play_back_string(input)
         expect(output.string).to include("$var1 = 'test'")
-        expect(output.string).to include('"test"')
+        expect(output.string).to include("'test'")
       end
     end
     describe 'multiple lines puppet code' do

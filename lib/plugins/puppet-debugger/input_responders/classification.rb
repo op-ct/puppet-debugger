@@ -9,7 +9,7 @@ module PuppetDebugger
       COMMAND_GROUP = :node
 
       def run(_args = [])
-        debugger.node.classes.ai
+        format_value(debugger.node.classes)
       end
     end
   end
