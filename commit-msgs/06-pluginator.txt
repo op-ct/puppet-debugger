@@ -1,0 +1,16 @@
+Drop pluginator; discover plugins with Gem.find_files
+
+Pluginator's job here was discovery: glob
+plugins/puppet-debugger/input_responders/*.rb across $LOAD_PATH and
+installed gems, require the files, and hand back the classes.
+
+InputResponderPlugin.load_plugins now does the same with
+Gem.find_files, which searches installed gems (or the bundle, under
+Bundler) and $LOAD_PATH. Subclasses register themselves through an
+inherited hook, so the classes come from the registry rather than from
+file names. The directory layout and class conventions in
+Plugin_development.md are unchanged, so plugin gems written for the
+pluginator-based loader keep working. The unused Cli#responder_list is
+removed along with the dependency.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

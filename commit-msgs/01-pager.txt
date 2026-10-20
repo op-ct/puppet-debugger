@@ -1,0 +1,20 @@
+Replace tty-pager with a built-in pager
+
+tty-pager pulls in strings 0.2.1, which pins unicode-display_width to
+'< 3.0'. OpenBolt activates terminal-table 4 and unicode-display_width 3
+at startup, so requiring puppet-debugger inside a Bolt plan fails with:
+
+    Gem::ConflictError: Unable to activate strings-0.2.1, because
+    unicode-display_width-3.2.0 conflicts with
+    unicode-display_width (>= 1.5, < 3.0)
+
+strings has had no release since 2021 and tty-pager since 2020.
+
+PuppetDebugger::Pager does what the debugger used tty-pager for: it
+reports the terminal height (io-console, then LINES, then 24) and pipes
+long output through the PAGER command, defaulting to 'less -R'. Paging
+only happens when the output is a tty, and a pager that cannot be
+started falls back to plain output. This removes five transitive gems:
+tty-pager, tty-screen, strings, strings-ansi and unicode_utils.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

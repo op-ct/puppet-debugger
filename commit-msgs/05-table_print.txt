@@ -1,0 +1,8 @@
+Drop table_print
+
+The functions responder used TablePrint for one two-column listing of
+function names and module names. A format string with the width of the
+longest name produces the same table. The functions spec only checks
+that run returns a String.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

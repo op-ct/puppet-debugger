@@ -1,0 +1,261 @@
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index 04dc8be..5d17008 100644
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -100,13 +100,6 @@ bump_and_tag:
+ #   only:
+ #     - tags
+ 
+-puppet_6_ruby27:
+-  allow_failure: false
+-  variables:
+-    PUPPET_GEM_VERSION: "~> 6.0"
+-  <<: *puppet_job_def_ruby27
+-  <<: *ruby27
+-
+ puppet_7_ruby27:
+   allow_failure: false
+   variables:
+@@ -128,14 +121,22 @@ puppet_8_ruby3.4:
+   <<: *puppet_job_def_ruby30plus
+   <<: *ruby34
+ 
+-openvox_puppet_8_ruby3.2:
++openvox_8_ruby3.2:
+   allow_failure: false
+   variables:
+-    USE_OPENVOX: true
+-    PUPPET_GEM_VERSION: "8.15.0"
++    USE_OPENVOX: "true"
++    PUPPET_GEM_VERSION: "~> 8.0"
+   <<: *puppet_job_def_ruby30plus
+   <<: *ruby32
+ 
++openvox_8_ruby3.4:
++  allow_failure: false
++  variables:
++    USE_OPENVOX: "true"
++    PUPPET_GEM_VERSION: "~> 8.0"
++  <<: *puppet_job_def_ruby30plus
++  <<: *ruby34
++
+ 
+ 
+ 
+diff --git a/.rubocop.yml b/.rubocop.yml
+index dbe7d75..d8b12eb 100644
+--- a/.rubocop.yml
++++ b/.rubocop.yml
+@@ -14,7 +14,7 @@ inherit_from: .rubocop_todo.yml
+ # See https://docs.rubocop.org/rubocop/configuration
+ AllCops:
+   StyleGuideBaseURL: https://rubystyle.guide
+-  TargetRubyVersion: 2.4
++  TargetRubyVersion: 2.7
+   Exclude:
+     - 'spec/fixtures/**/*'
+     - 'vendor/**/*'
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c6a241c..33adb14 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,6 +1,8 @@
+ # Puppet Debugger Changelog
+ 
+-## Unreleased
++## Unreleased (proposed 2.0.0: the output format changes)
++- No runtime gem dependencies remain; Ruby >= 2.7 and Puppet >= 7 (or OpenVox 8) are required. Puppet 6
++  and Ruby 2.4-2.6 are no longer supported.
+ - Replace the vendored Trollop option parser with optparse; `puppet-debugger --help` output changes
+   and `--version` is added.
+ - facterdb is now optional. Without a scope, facts come from `--facts FILE` (JSON or YAML), from
+diff --git a/DEVELOPMENT.md b/DEVELOPMENT.md
+index 5162608..d93e8a8 100644
+--- a/DEVELOPMENT.md
++++ b/DEVELOPMENT.md
+@@ -1,11 +1,30 @@
+ ## Testing
+ 
+-In order to test you need to export the following environment variable when in the project directory.
+-The puppet command will then load the face so you can use with `puppet debugger`
++Standard setup with a system Ruby:
+ 
+-`export RUBYLIB=lib/`
++    bundle install
++    bundle exec puppet module install puppetlabs-stdlib
++    bundle exec rspec
+ 
+-`puppet debugger`
++Set `USE_OPENVOX=true` to test against the openvox gem instead of puppet, and `PUPPET_GEM_VERSION`
++to pick a version of either.
++
++### With an all-in-one Ruby
++Without a system Ruby you can run the suite with OpenBolt's Ruby and reuse the gems it ships:
++
++    export GEM_HOME=$PWD/vendor/gems           # project gems go here; the AIO's stay read-only
++    export PATH=/opt/puppetlabs/bolt/bin:$PATH
++    bundle config set --local path.system true
++    USE_OPENVOX=true bundle install --prefer-local
++    USE_OPENVOX=true bundle exec puppet module install puppetlabs-stdlib
++    USE_OPENVOX=true bundle exec rspec
++
++`--prefer-local` keeps the AIO's version of gems named in the Gemfile; transitive gems may still resolve
++to newer releases than the AIO has, which costs a native build for a few of them.
++
++To try the debugger from the checkout without installing it:
++
++    RUBYLIB=lib puppet debugger
+ 
+ 
+ ## Plugin Development
+diff --git a/README.md b/README.md
+index 55af936..f12ffdd 100644
+--- a/README.md
++++ b/README.md
+@@ -35,14 +35,55 @@ A interactive command line tool for evaluating and debugging the puppet language
+ Please visit https://docs.puppet-debugger.com for more info.
+ 
+ ## Compatibility
+-Requires Puppet 5.5+, ruby 2.4+
++Requires Puppet 7+ or OpenVox 8+, and Ruby 2.7+. The gem has no runtime dependencies beyond
++Ruby's standard library and the puppet or openvox gem, so it installs cleanly into the Ruby
++shipped with the OpenVox agent, OpenBolt, and Puppet all-in-one packages.
+ 
+ ## Production usage
+-The puppet debugger is a developer tool that should only be used when writing puppet code.  Although it might seem useful
+-to install on your production puppet master. Please do not install because of the puppet-debugger gem dependencies that might conflict with your existing environment.
++The puppet debugger is a developer tool that should only be used when writing puppet code. Although it might seem useful
++to install on your production puppet master, please do not; `debug::break()` refuses to start without a terminal, but
++the gem has no business on a server.
+ 
+ ## Installation
+-`gem install puppet-debugger`
++With a system Ruby:
++
++    gem install puppet-debugger
++
++### All-in-one (AIO) packages
++The OpenVox agent and OpenBolt packages ship their own Ruby under `/opt/puppetlabs/puppet/bin` and
++`/opt/puppetlabs/bolt/bin`. Install the gem with that Ruby's `gem` command and `--user-install`, which
++puts it in your home directory (`~/.local/share/gem/ruby/<version>`), the one gem location the
++`puppet` and `bolt` wrappers leave on the search path:
++
++    /opt/puppetlabs/puppet/bin/gem install --user-install puppet-debugger
++    /opt/puppetlabs/bolt/bin/gem install --user-install puppet-debugger
++
++On an isolated network, download `puppet-debugger-<version>.gem` from rubygems.org elsewhere, copy
++the one file across, and add `--local`:
++
++    /opt/puppetlabs/bolt/bin/gem install --user-install --local puppet-debugger-<version>.gem
++
++Then `puppet debugger` and `debug::break()` in Bolt plans work through the normal `puppet` and `bolt`
++commands. Optional extras, installed the same way: `facterdb` for `--facterdb-filter`.
++
++### Beside other gems
++The gem declares no dependencies, so it cannot conflict with gems you have installed into the same
++user directory, and other gems' constraints cannot make it unloadable. Three layouts are supported:
++
++1. The RubyGems user directory, as above. Works with both AIO wrappers.
++2. A per-project Bundler setup on the Bolt AIO that reuses the AIO's gems: in the project,
++   `bundle config set --local path.system true`, set `GEM_HOME=$PWD/vendor/gems` in the environment,
++   `bundle install --prefer-local` (with network), then `bundle cache`, and on the isolated host
++   `bundle install --local`. Run with `bundle exec /opt/puppetlabs/bolt/bin/bolt ...`, not through
++   `/usr/local/bin/bolt`, which clears `GEM_HOME`.
++3. A conventional `Gemfile` for rspec-puppet or onceover, where `gem 'puppet-debugger'` is listed like any
++   other gem and everything runs under `bundle exec`.
++
++### Facts
++A session started with `puppet debugger` or `puppet-debugger` needs facts for the node it pretends to be.
++By default they are gathered from the machine you are on. `--facts FILE` reads them from a JSON or YAML
++file instead (the output of `facter --json` or `puppet facts`, a cached facts file, or a facterdb fixture).
++`--facterdb-filter FILTER` uses the optional facterdb gem to try your code against another operating system.
+ 
+ 
+ ## Web demo
+@@ -63,9 +104,9 @@ and see what it would actual do when compiling a resource.
+ 
+ Example Usage
+ ```
+-Ruby Version: 2.6.5
+-Puppet Version: 6.17.0
+-Puppet Debugger Version: 1.0.0
++Ruby Version: 3.2.5
++Puppet Version: 8.28.0
++Puppet Debugger Version: 2.0.0
+ Created by: NWOps <corey@nwops.io>
+ Type "commands" for a list of debugger commands
+ or "help" to show the help screen.
+@@ -73,21 +114,21 @@ or "help" to show the help screen.
+ 
+ 1:>> $os
+  => {
+-  "architecture" => "x86_64",
+-        "family" => "RedHat",
+-      "hardware" => "x86_64",
+-          "name" => "Fedora",
+-       "release" => {
+-     "full" => "23",
+-    "major" => "23"
++  'architecture' => 'x86_64',
++  'family' => 'RedHat',
++  'hardware' => 'x86_64',
++  'name' => 'Fedora',
++  'release' => {
++    'full' => '42',
++    'major' => '42'
+   },
+-       "selinux" => {
+-       "config_mode" => "permissive",
+-     "config_policy" => "targeted",
+-      "current_mode" => "permissive",
+-           "enabled" => true,
+-          "enforced" => false,
+-    "policy_version" => "29"
++  'selinux' => {
++    'config_mode' => 'permissive',
++    'config_policy' => 'targeted',
++    'current_mode' => 'permissive',
++    'enabled' => true,
++    'enforced' => false,
++    'policy_version' => '29'
+   }
+ }
+ 2:>> 
+diff --git a/puppet-debugger.gemspec b/puppet-debugger.gemspec
+index 1026c33..0f8124f 100644
+--- a/puppet-debugger.gemspec
++++ b/puppet-debugger.gemspec
+@@ -1,7 +1,6 @@
+ # frozen_string_literal: true
+ 
+ require_relative 'lib/puppet-debugger/version'
+-require 'date'
+ 
+ Gem::Specification.new do |s|
+   s.name = 'puppet-debugger'
+@@ -19,7 +18,6 @@ Gem::Specification.new do |s|
+   s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
+   s.require_paths = ['lib']
+   s.authors = ['Corey Osman']
+-  s.date = DateTime.now.strftime('%Y-%m-%d')
+   s.description = 'A interactive command line tool for evaluating and debugging the puppet language'
+   s.email = 'corey@nwops.io'
+   s.extra_rdoc_files = [
+@@ -27,13 +25,15 @@ Gem::Specification.new do |s|
+     'LICENSE.txt',
+     'README.md'
+   ]
++  # Ruby 2.7 is the oldest Ruby shipped with a supported Puppet (7); no Ruby 3 syntax is used
+   s.required_ruby_version = '>= 2.7'
+   s.homepage = 'https://gitlab.com/puppet-debugger/puppet-debugger'
+   s.licenses = ['MIT']
+   s.rubygems_version = '2.4.5.1'
+   s.summary = 'A repl based debugger for the puppet language'
+-  # s.add_runtime_dependency('puppet', ['>= 6']) - since there is now puppet and openvox, this is now a grey dependency
+-  # s.add_runtime_dependency('bolt', ['>= 2.42.0'])
++  # No runtime dependencies: the debugger uses only Ruby's standard library and the
++  # puppet or openvox gem, which is not declared because either one satisfies it
++  # (puppet >= 7 or openvox >= 8). Keep it that way; see README "Installation".
+   s.add_development_dependency('facterdb', ['>= 2.0.0'])
+   s.add_development_dependency('rdoc', ['>= 6.0'])
+   s.add_development_dependency('rspec', ['>= 3.6'])

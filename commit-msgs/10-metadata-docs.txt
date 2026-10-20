@@ -1,0 +1,19 @@
+Metadata, CI and docs for the dependency-free gem
+
+The gemspec now declares no runtime dependencies: everything the
+debugger needs comes from Ruby's standard library and the puppet or
+openvox gem. Ruby >= 2.7 and Puppet >= 7 are supported; the Puppet 6
+CI job is dropped, the openvox job uses the published gem, and an
+openvox 8 on Ruby 3.4 job is added. Rubocop's target Ruby is 2.7.
+
+README: installation on the OpenVox agent and OpenBolt all-in-one
+packages, including the offline `gem install --user-install --local`
+path, the three ways to run the gem beside other gems (RubyGems user
+directory, a per-project Bundler setup on the Bolt AIO, a conventional
+Gemfile), the --facts option, and the new output format in the example.
+DEVELOPMENT.md: how to run the suite with an AIO Ruby.
+
+The CHANGELOG proposes 2.0.0 for the next release because of the output
+format change.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

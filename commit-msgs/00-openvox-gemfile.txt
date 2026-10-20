@@ -1,0 +1,7 @@
+Use the published openvox gem in the Gemfile
+
+openvox has been on rubygems.org since 8.x, so USE_OPENVOX no longer
+needs a git checkout. PUPPET_GEM_VERSION now takes a version requirement
+for openvox the same way it does for puppet, defaulting to '~> 8'.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

@@ -1,0 +1,29 @@
+Replace awesome_print with Puppet's StringConverter
+
+Values are now rendered by Puppet::Pops::Types::StringConverter with the
+'%#p' format, which writes them the way a manifest would: hashes one key
+per line, undef for nil, single-quoted strings, types such as
+Integer[1, 10] and references such as File['/tmp/x'] as the language
+spells them, Sensitive redacted. PuppetDebugger::Formatter normalizes
+the objects the debugger meets before conversion: facts objects to their
+hash, RAL resources to "Puppet::Type::File { ... }" with their
+parameters (what the awesome_print extension produced), compiler
+resources through the RAL, Bolt results and targets through to_data and
+to_h, and hashes to sorted string-keyed hashes.
+
+PuppetDebugger::Formatter::Color colours the result by running the text
+through Puppet's lexer and wrapping string, number, undef, boolean and
+type-name tokens with Puppet::Util::Colors, so the `color` setting
+(ansi, html, false) applies. The Cli applies colour only when the output
+is a terminal or html_mode is set. The lexer reports byte offsets, so
+escaped quotes inside strings keep their place; text that does not lex,
+and inspect fallbacks such as "#<Sensitive [value redacted]>", pass
+through unchanged.
+
+Plugins call format_value(obj) on the debugger instead of obj.ai.
+
+Visible change: output is Puppet syntax rather than awesome_print's Ruby
+style. Strings print with single quotes, nil prints as undef, arrays no
+longer carry [0], [1] index labels, and hash keys are left-aligned.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

@@ -1,0 +1,13 @@
+diff --git a/Gemfile b/Gemfile
+index 2bca954..bb1db05 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -8,7 +8,7 @@ gem 'rb-readline'
+ gem 'table_print'
+ gem 'tty-pager'
+ if ENV['USE_OPENVOX']
+-  gem 'openvox', git: 'https://github.com/OpenVoxProject/puppet.git', ref: ENV['PUPPET_GEM_VERSION'] || '8.15.0'
++  gem 'openvox', ENV['PUPPET_GEM_VERSION'] || '~> 8'
+ else
+   gem 'puppet', ENV['PUPPET_GEM_VERSION'] || '~> 8'
+ end

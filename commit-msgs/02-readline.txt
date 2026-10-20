@@ -1,0 +1,20 @@
+Drop rb-readline in favour of Ruby's readline
+
+rb-readline is a pure-Ruby readline from 2017. When installed it ships
+its own lib/readline.rb, so `require 'readline'` loaded it even on
+Rubies that have the readline extension. The debugger only uses the
+common Readline API (readline, input=, output=, completion_proc=,
+line_buffer, basic_word_break_characters=, completion_append_character=),
+which the extension and reline both provide.
+
+cli.rb now requires 'readline' and falls back to reline, a default gem
+since Ruby 2.7, when the extension is missing. Readline.input/output are
+only assigned real IO objects: the extension and reline raise TypeError
+on a StringIO, which the specs pass as out_buffer; rb-readline accepted
+anything. Nothing else in the code base reads from in_buffer through
+Readline, so specs are unaffected.
+
+Visible change: line editing and history now come from GNU readline or
+libedit where Ruby was built with them.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

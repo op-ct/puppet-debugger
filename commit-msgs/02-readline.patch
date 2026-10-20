@@ -1,0 +1,68 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 17c6dcb..d9e54cd 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,6 +1,8 @@
+ # Puppet Debugger Changelog
+ 
+ ## Unreleased
++- Drop rb-readline. The debugger now uses Ruby's readline extension (GNU readline or libedit) and
++  falls back to reline where the extension is missing.
+ - Replace tty-pager with a built-in pager (`PAGER`, default `less -R`). Removes the strings gem and its
+   unicode-display_width `< 3.0` pin, which made the gem unloadable inside OpenBolt
+   (`Gem::ConflictError: Unable to activate strings-0.2.1`).
+diff --git a/Gemfile b/Gemfile
+index 9ec0b06..c170c42 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -4,7 +4,6 @@ source 'http://rubygems.org'
+ gem 'awesome_print', '~> 1.9'
+ gem 'facterdb', '>= 2.0.0'
+ gem 'pluginator', '~> 1.5.0'
+-gem 'rb-readline'
+ gem 'table_print'
+ if ENV['USE_OPENVOX']
+   gem 'openvox', ENV['PUPPET_GEM_VERSION'] || '~> 8'
+diff --git a/lib/puppet-debugger/cli.rb b/lib/puppet-debugger/cli.rb
+index b240be6..ab425b0 100755
+--- a/lib/puppet-debugger/cli.rb
++++ b/lib/puppet-debugger/cli.rb
+@@ -4,7 +4,13 @@ begin
+ rescue LoadError
+   abort "puppet-debugger requires either the 'puppet' or 'openvox' gem to be installed."
+ end
+-require 'readline'
++begin
++  require 'readline'
++rescue LoadError
++  # Ruby built without the readline extension; reline ships with Ruby >= 2.7 and has the same API
++  require 'reline'
++  Readline = Reline unless defined?(Readline)
++end
+ require 'json'
+ require 'puppet-debugger/support'
+ require 'pluginator'
+@@ -36,8 +42,9 @@ module PuppetDebugger
+       @source_file = options[:source_file] || nil
+       @source_line_num = options[:source_line] || nil
+       @in_buffer = options[:in_buffer] || $stdin
+-      Readline.input = @in_buffer
+-      Readline.output = @out_buffer
++      # the readline extension and reline accept only real IO objects, not StringIO
++      Readline.input = @in_buffer if @in_buffer.is_a?(IO)
++      Readline.output = @out_buffer if @out_buffer.is_a?(IO)
+       Readline.completion_append_character = ''
+       Readline.basic_word_break_characters = ' '
+       Readline.completion_proc = command_completion
+diff --git a/puppet-debugger.gemspec b/puppet-debugger.gemspec
+index 82bb345..e372065 100644
+--- a/puppet-debugger.gemspec
++++ b/puppet-debugger.gemspec
+@@ -38,7 +38,6 @@ Gem::Specification.new do |s|
+   s.add_runtime_dependency('pluginator', ['~> 1.5.0'])
+   # s.add_runtime_dependency('puppet', ['>= 6']) - since there is now puppet and openvox, this is now a grey dependency
+   # s.add_runtime_dependency('bolt', ['>= 2.42.0'])
+-  s.add_runtime_dependency('rb-readline', ['>= 0.5.5'])
+   s.add_runtime_dependency('table_print', ['>= 1.0.0'])
+   s.add_development_dependency('rdoc', ['>= 6.0'])
+   s.add_development_dependency('rspec', ['>= 3.6'])

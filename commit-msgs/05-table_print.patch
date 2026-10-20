@@ -1,0 +1,61 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6c67092..6a86d54 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,6 +1,7 @@
+ # Puppet Debugger Changelog
+ 
+ ## Unreleased
++- Drop table_print; the `functions` listing is formatted in place.
+ - Drop the bundler runtime dependency. The `functions` command finds the current module by walking up
+   to the nearest `metadata.json` or `Gemfile` instead of asking Bundler.
+ - Drop rb-readline. The debugger now uses Ruby's readline extension (GNU readline or libedit) and
+diff --git a/Gemfile b/Gemfile
+index c170c42..2038eef 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -4,7 +4,6 @@ source 'http://rubygems.org'
+ gem 'awesome_print', '~> 1.9'
+ gem 'facterdb', '>= 2.0.0'
+ gem 'pluginator', '~> 1.5.0'
+-gem 'table_print'
+ if ENV['USE_OPENVOX']
+   gem 'openvox', ENV['PUPPET_GEM_VERSION'] || '~> 8'
+ else
+diff --git a/lib/plugins/puppet-debugger/input_responders/functions.rb b/lib/plugins/puppet-debugger/input_responders/functions.rb
+index 731c5c9..9421f06 100644
+--- a/lib/plugins/puppet-debugger/input_responders/functions.rb
++++ b/lib/plugins/puppet-debugger/input_responders/functions.rb
+@@ -1,7 +1,6 @@
+ # frozen_string_literal: true
+ 
+ require 'puppet-debugger/input_responder_plugin'
+-require 'table_print'
+ require 'fileutils'
+ 
+ module PuppetDebugger
+@@ -15,7 +14,11 @@ module PuppetDebugger
+ 
+       def run(args = [])
+         filter = args.first || ''
+-        TablePrint::Printer.table_print(sorted_list(filter), %i[full_name mod_name])
++        rows = sorted_list(filter)
++        width = (rows.map { |r| r[:full_name].length } + ['FULL_NAME'.length]).max
++        lines = [format('%-*s | %s', width, 'FULL_NAME', 'MOD_NAME'), "#{'-' * (width + 1)}|#{'-' * 9}"]
++        rows.each { |r| lines << format('%-*s | %s', width, r[:full_name], r[:mod_name]) }
++        lines.join("\n")
+       end
+ 
+       def sorted_list(filter = '')
+diff --git a/puppet-debugger.gemspec b/puppet-debugger.gemspec
+index 34eb338..49b62ae 100644
+--- a/puppet-debugger.gemspec
++++ b/puppet-debugger.gemspec
+@@ -37,7 +37,6 @@ Gem::Specification.new do |s|
+   s.add_runtime_dependency('pluginator', ['~> 1.5.0'])
+   # s.add_runtime_dependency('puppet', ['>= 6']) - since there is now puppet and openvox, this is now a grey dependency
+   # s.add_runtime_dependency('bolt', ['>= 2.42.0'])
+-  s.add_runtime_dependency('table_print', ['>= 1.0.0'])
+   s.add_development_dependency('rdoc', ['>= 6.0'])
+   s.add_development_dependency('rspec', ['>= 3.6'])
+ end

@@ -1,0 +1,61 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index d9e54cd..6c67092 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,6 +1,8 @@
+ # Puppet Debugger Changelog
+ 
+ ## Unreleased
++- Drop the bundler runtime dependency. The `functions` command finds the current module by walking up
++  to the nearest `metadata.json` or `Gemfile` instead of asking Bundler.
+ - Drop rb-readline. The debugger now uses Ruby's readline extension (GNU readline or libedit) and
+   falls back to reline where the extension is missing.
+ - Replace tty-pager with a built-in pager (`PAGER`, default `less -R`). Removes the strings gem and its
+diff --git a/lib/plugins/puppet-debugger/input_responders/functions.rb b/lib/plugins/puppet-debugger/input_responders/functions.rb
+index 0c896e6..731c5c9 100644
+--- a/lib/plugins/puppet-debugger/input_responders/functions.rb
++++ b/lib/plugins/puppet-debugger/input_responders/functions.rb
+@@ -3,7 +3,6 @@
+ require 'puppet-debugger/input_responder_plugin'
+ require 'table_print'
+ require 'fileutils'
+-require 'bundler'
+ 
+ module PuppetDebugger
+   module InputResponders
+@@ -43,12 +42,19 @@ module PuppetDebugger
+         functions
+       end
+ 
+-      # @return [String] - the current module directory or directory that contains a gemfile
++      # @return [String] - the nearest directory at or above the working directory that
++      #   holds a metadata.json or a Gemfile, otherwise the working directory
+       def current_module_dir
+         @current_module_dir ||= begin
+-          File.dirname(::Bundler.default_gemfile)
+-                                rescue ::Bundler::GemfileNotFound
+-                                  Dir.pwd
++          dir = Dir.pwd
++          loop do
++            break dir if File.exist?(File.join(dir, 'metadata.json')) || File.exist?(File.join(dir, 'Gemfile'))
++
++            parent = File.dirname(dir)
++            break Dir.pwd if parent == dir
++
++            dir = parent
++          end
+         end
+       end
+ 
+diff --git a/puppet-debugger.gemspec b/puppet-debugger.gemspec
+index e372065..34eb338 100644
+--- a/puppet-debugger.gemspec
++++ b/puppet-debugger.gemspec
+@@ -33,7 +33,6 @@ Gem::Specification.new do |s|
+   s.rubygems_version = '2.4.5.1'
+   s.summary = 'A repl based debugger for the puppet language'
+   s.add_runtime_dependency('awesome_print', ['~> 1.7'])
+-  s.add_runtime_dependency('bundler')
+   s.add_runtime_dependency('facterdb', ['>= 0.4.0'])
+   s.add_runtime_dependency('pluginator', ['~> 1.5.0'])
+   # s.add_runtime_dependency('puppet', ['>= 6']) - since there is now puppet and openvox, this is now a grey dependency

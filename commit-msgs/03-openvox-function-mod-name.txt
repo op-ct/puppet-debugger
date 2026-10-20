@@ -1,0 +1,10 @@
+Recognise openvox gem paths in the functions listing
+
+function_obj took the module name of a core function from a
+`puppet-<version>` directory in its path. Under the openvox gem the
+directory is `openvox-<version>`, so core functions were reported with
+whatever directory name happened to precede `/lib` instead. The spec
+`#function_obj has puppet namespace` failed for the same reason when
+run against openvox.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

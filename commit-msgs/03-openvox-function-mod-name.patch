@@ -1,0 +1,28 @@
+diff --git a/lib/plugins/puppet-debugger/input_responders/functions.rb b/lib/plugins/puppet-debugger/input_responders/functions.rb
+index ff72cb4..0c896e6 100644
+--- a/lib/plugins/puppet-debugger/input_responders/functions.rb
++++ b/lib/plugins/puppet-debugger/input_responders/functions.rb
+@@ -85,8 +85,8 @@ module PuppetDebugger
+         match = file.match('\/(?<mod>[\w\-\.]+)\/(lib|functions|manifests)')
+         summary_match = File.read(file, encoding: 'UTF-8').match(/@summary\s(.*)/)
+         summary = summary_match[1] if summary_match
+-        # fetch the puppet version if this is a function from puppet gem
+-        captures = file.match(/(puppet-[\d\.]+)/)
++        # fetch the puppet version if this is a function from the puppet or openvox gem
++        captures = file.match(/((?:puppet|openvox)-[\d\.]+)/)
+         file_namespace = captures[1] if captures
+         mod_name = file_namespace || match[:mod]
+         full_name = namespace.nil? || namespace.empty? ? name : name.prepend("#{namespace}::")
+diff --git a/spec/input_responders/functions_spec.rb b/spec/input_responders/functions_spec.rb
+index 3fb1299..062c34d 100644
+--- a/spec/input_responders/functions_spec.rb
++++ b/spec/input_responders/functions_spec.rb
+@@ -68,7 +68,7 @@ describe :functions do
+     file, = Puppet::Functions.method(:create_function).source_location
+     dir = File.dirname(file)
+     f_obj = plugin.function_obj(File.join(dir, 'functions', 'include.rb'))
+-    expect(f_obj[:mod_name]).to match(/puppet-.*/)
++    expect(f_obj[:mod_name]).to match(/(puppet|openvox)-.*/)
+     expect(f_obj[:name]).to eq('include')
+     expect(f_obj[:full_name]).to eq('include')
+     expect(f_obj[:summary]).to be_nil

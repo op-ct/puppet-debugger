@@ -1,0 +1,148 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index b7cb689..e79916d 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,4 +1,9 @@
+ # Debug Module Changelog
++## version 0.4.0
++* Require Puppet 7+ (OpenVox 8 included); drop the Puppet 4 stacktrace backport
++* debug::break() reports the install command when the puppet-debugger gem is missing
++* README: installing with the OpenVox agent and OpenBolt Rubies, use in Bolt plans
++
+ ## version 0.3.0
+ * Add testing for puppet 7 and 8, remove for 4 and 5
+ 
+diff --git a/Gemfile b/Gemfile
+index f84ea87..25bc6d7 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -29,7 +29,11 @@ group :development do
+   gem "parallel_tests", '= 3.12.1',              require: false
+   gem "pry", '~> 0.10',                          require: false
+   gem "simplecov-console", '~> 0.9',             require: false
+-  gem "puppet-debugger", '~> 1.0',               require: false
++  if ENV['PUPPET_DEBUGGER_PATH']
++    gem "puppet-debugger", path: ENV['PUPPET_DEBUGGER_PATH'], require: false
++  else
++    gem "puppet-debugger", '>= 1.6',               require: false
++  end
+   gem "rubocop", '~> 1.50.0',                    require: false
+   gem "rubocop-performance", '= 1.16.0',         require: false
+   gem "rubocop-rspec", '= 2.19.0',               require: false
+diff --git a/README.md b/README.md
+index cfa52d2..d602792 100644
+--- a/README.md
++++ b/README.md
+@@ -17,10 +17,18 @@ The function will inject the scope, node and environment data into the debugger
+ allowing you to poke around to see variables, functions, facts, classes, and resources defined in the current scope.
+ 
+ ## Requirements
+-Ensure you have installed the puppet-debugger gem `gem install puppet-debugger`
+-or place this in your Gemfile `gem 'puppet-debugger', '>= 0.4'` for your puppet module.
++Puppet 7 or newer, or OpenVox 8, and the puppet-debugger gem installed for the Ruby that runs
++your Puppet code. With a system Ruby: `gem install puppet-debugger`, or add
++`gem 'puppet-debugger'` to your module's Gemfile. With the OpenVox agent or OpenBolt packages,
++use their own `gem` command and the RubyGems user directory, which their wrappers keep on the
++gem path:
+ 
+-This also requires puppet 3.8+ with future parser enabled.
++    /opt/puppetlabs/puppet/bin/gem install --user-install puppet-debugger
++    /opt/puppetlabs/bolt/bin/gem install --user-install puppet-debugger
++
++On an isolated network copy the `.gem` file across and add `--local`. The gem has no
++dependencies, so that one file is all that is needed. If the gem is missing,
++`debug::break()` fails with the install command for the Ruby in use.
+ 
+ You will also want to include this module in your fixtures file if using for rspec-puppet
+ unit testing.
+@@ -99,6 +107,11 @@ Type "exit", "functions", "vars", "krt", "whereami", "facts", "resources", "clas
+ 
+ If using with rspec-puppet, only the facts you define in your test suite will be present in the debugger.
+ 
++### Bolt plans
++`debug::break()` also works inside Bolt plans. Add the module to the project's `Puppetfile` or
++`modules/` directory and call the function where you want to stop; Bolt's `$targets`, results and
++plan variables are then available in the session, and Bolt objects print as their data.
++
+ For more information on how to use the puppet debugger please refer to the [documentation](https://github.com/nwops/puppet-debugger)
+ 
+ ## Troubleshooting
+diff --git a/lib/puppet/functions/debug/break.rb b/lib/puppet/functions/debug/break.rb
+index 672fc40..14aebbc 100644
+--- a/lib/puppet/functions/debug/break.rb
++++ b/lib/puppet/functions/debug/break.rb
+@@ -13,7 +13,12 @@ Puppet::Functions.create_function(:'debug::break', Puppet::Functions::InternalFu
+   end
+ 
+   def break(scope, options = {})
+-    require 'puppet-debugger'
++    begin
++      require 'puppet-debugger'
++    rescue LoadError
++      raise Puppet::Error, "debug::break(): the puppet-debugger gem is not installed for this Ruby. " \
++                           "Install it with: #{RbConfig.ruby} -S gem install --user-install puppet-debugger"
++    end
+     if $stdout.isatty
+       options = options.merge(scope: scope)
+       # forking the process allows us to start a new debugger shell
+@@ -38,27 +43,8 @@ Puppet::Functions.create_function(:'debug::break', Puppet::Functions::InternalFu
+   end
+ 
+   # returns a stacktrace of called puppet code
++  # @return [Array<Array(String, Integer)>] file and line pairs, innermost first
+   def stacktrace
+-    if Gem::Version.new(Puppet.version) >= Gem::Version.new('4.6')
+-      Puppet::Pops::PuppetStack.stacktrace.find_all { |line| !line.include?('unknown') }
+-    else
+-      old_stacktrace
+-    end
+-  end
+-
+-  # @return [String] - file path to source code
+-  # @return [Integer] - line number of called function
+-  # This method originally came from the puppet 4.6 codebase and was backported here
+-  # for compatibility with older puppet versions
+-  # The basics behind this are to find the `.pp` file in the list of loaded code
+-  # This is only here for people who can't upgrade for some reason.
+-  def old_stacktrace
+-    result = caller.each_with_object([]) do |loc, memo|
+-      next unless loc =~ %r{\A(.*\.pp)?:([0-9]+):in\s(.*)}
+-      # if the file is not found we set to code
+-      # and read from Puppet[:code]
+-      # $3 is reserved for the stacktrace type
+-      memo << [Regexp.last_match(1).nil? ? :code : Regexp.last_match(1), Regexp.last_match(2).to_i]
+-    end
++    Puppet::Pops::PuppetStack.stacktrace.find_all { |line| !line.include?('unknown') }
+   end
+ end
+diff --git a/metadata.json b/metadata.json
+index a35716f..7238ef8 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -1,15 +1,13 @@
+ {
+   "name": "nwops-debug",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "author": "Corey Osman",
+   "summary": "Used for starting the puppet debugger from inside puppet code",
+   "license": "Apache-2.0",
+   "source": "https://github.com/nwops/puppet-debug",
+   "project_page": "https://github.com/nwops/puppet-debug",
+   "issues_url": "https://github.com/nwops/puppet-debug/issues",
+-  "dependencies": [
+-
+-  ],
++  "dependencies": [],
+   "operatingsystem_support": [
+     {
+       "operatingsystem": "CentOS",
+@@ -71,7 +69,7 @@
+   "requirements": [
+     {
+       "name": "puppet",
+-      "version_requirement": ">= 4.10.0 < 9.0.0"
++      "version_requirement": ">= 7.0.0 < 9.0.0"
+     }
+   ],
+   "pdk-version": "3.4.0",

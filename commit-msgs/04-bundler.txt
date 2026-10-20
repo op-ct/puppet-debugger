@@ -1,0 +1,16 @@
+Drop the bundler runtime dependency
+
+The only use of bundler was Bundler.default_gemfile in the functions
+responder, to find the directory of the module being worked on. The
+gemspec listed bundler without a version bound, so `gem install
+puppet-debugger` pulled the newest bundler into the gem directory
+beside the one RubyGems ships, which on an AIO Ruby produces the
+"Clearing out unresolved specs" warning at every startup.
+
+current_module_dir now walks up from the working directory to the
+first directory holding a metadata.json or a Gemfile, and falls back
+to the working directory, which is what the Bundler path did. The only
+behavioural difference is that a module checkout without a Gemfile is
+now recognised by its metadata.json.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

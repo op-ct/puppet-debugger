@@ -1,0 +1,29 @@
+Make facterdb optional; add --facts FILE
+
+facterdb supplied the facts for a standalone debugger session: a
+synthetic Rocky 8 fact set chosen by filter. That is useful for trying
+code against another OS, but it made a 7 MB gem with its own
+dependencies mandatory for everyone, including users on isolated
+networks whose sessions start from a Bolt plan or a scope and never
+touch it.
+
+Facts for a session without a scope now come from, in order:
+
+  - a facts file given with --facts (JSON or YAML; a plain facts hash
+    such as `facter --json` output or a facterdb fixture, or a Puppet
+    facts document with name and values such as `puppet facts` output
+    or a cached facts file);
+  - facterdb, when --facterdb-filter or DEBUGGER_FACTERDB_FILTER is
+    given or use_facterdb is set; the gem is required at that point and
+    a missing gem is reported with the install command for the running
+    Ruby;
+  - this machine's facts through Puppet's facts indirection, gathered
+    once per process.
+
+`puppet debugger` with no options behaves as --no-facterdb did. The
+facterdb_filter command notes when the gem is not installed. facterdb
+moves from the gemspec to the development dependencies, and the specs
+that rely on its fact set set DEBUGGER_FACTERDB_FILTER (spec_helper set
+REPL_FACTERDB_FILTER, which nothing read) or pass use_facterdb: true.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

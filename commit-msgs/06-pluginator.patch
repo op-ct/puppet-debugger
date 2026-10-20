@@ -1,0 +1,207 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6a86d54..d272ef1 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,6 +1,8 @@
+ # Puppet Debugger Changelog
+ 
+ ## Unreleased
++- Drop pluginator. Plugins are found with `Gem.find_files` under the same
++  `plugins/puppet-debugger/input_responders/` layout, so existing plugin gems keep working.
+ - Drop table_print; the `functions` listing is formatted in place.
+ - Drop the bundler runtime dependency. The `functions` command finds the current module by walking up
+   to the nearest `metadata.json` or `Gemfile` instead of asking Bundler.
+diff --git a/Gemfile b/Gemfile
+index 2038eef..7f7d7c2 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -3,7 +3,6 @@
+ source 'http://rubygems.org'
+ gem 'awesome_print', '~> 1.9'
+ gem 'facterdb', '>= 2.0.0'
+-gem 'pluginator', '~> 1.5.0'
+ if ENV['USE_OPENVOX']
+   gem 'openvox', ENV['PUPPET_GEM_VERSION'] || '~> 8'
+ else
+diff --git a/Plugin_development.md b/Plugin_development.md
+index 4f9cbe4..9b1251e 100644
+--- a/Plugin_development.md
++++ b/Plugin_development.md
+@@ -123,6 +123,10 @@ the following directory `lib/plugins/puppet-debugger/input_responders/`
+ If you are packaging as a gem you must still provide this directory layout in addition to whatever other supporting files
+ are also in your gem.
+ 
++Discovery uses `Gem.find_files('plugins/puppet-debugger/input_responders/*.rb')`, which searches every installed
++gem (or, under Bundler, every gem in the bundle) and every directory on `$LOAD_PATH`, including `RUBYLIB`. Each file
++found is required, and every class that inherits from `PuppetDebugger::InputResponderPlugin` is registered as a plugin.
++
+ ## Run Method
+ 
+ Your plugin must override the run method.  When your plugin is executed, an array is passed as the args variable.
+diff --git a/lib/plugins/puppet-debugger/input_responders/commands.rb b/lib/plugins/puppet-debugger/input_responders/commands.rb
+index 7437a0a..c7c9921 100644
+--- a/lib/plugins/puppet-debugger/input_responders/commands.rb
++++ b/lib/plugins/puppet-debugger/input_responders/commands.rb
+@@ -57,11 +57,9 @@ module PuppetDebugger
+         plugins.map(&:details)
+       end
+ 
++      # @return [Array<Class>] all input responder plugin classes, loading them on first use
+       def self.plugins
+-        debug_plugins = Pluginator.find('puppet-debugger')
+-        debug_plugins['input_responders']
+-      rescue NoMethodError
+-        raise PuppetDebugger::Exception::InvalidCommand.new(message: 'Unsupported gem version.  Please update with: gem update --system')
++        InputResponderPlugin.load_plugins
+       end
+ 
+       # @param name [String] - the name of the command that is associated with a plugin
+diff --git a/lib/puppet-debugger/cli.rb b/lib/puppet-debugger/cli.rb
+index ab425b0..cca31e5 100755
+--- a/lib/puppet-debugger/cli.rb
++++ b/lib/puppet-debugger/cli.rb
+@@ -13,7 +13,6 @@ rescue LoadError
+ end
+ require 'json'
+ require 'puppet-debugger/support'
+-require 'pluginator'
+ require 'puppet-debugger/hooks'
+ require 'forwardable'
+ require 'plugins/puppet-debugger/input_responders/functions'
+@@ -145,10 +144,6 @@ module PuppetDebugger
+       result
+     end
+ 
+-    def responder_list
+-      Pluginator.find(PuppetDebugger)
+-    end
+-
+     # @return [PuppetDebugger::Pager] the pager object, disable if CI or testing is present
+     def pager
+       @pager ||= PuppetDebugger::Pager.new(output: out_buffer, enabled: pager_enabled?)
+diff --git a/lib/puppet-debugger/input_responder_plugin.rb b/lib/puppet-debugger/input_responder_plugin.rb
+index e31b210..879cf0b 100644
+--- a/lib/puppet-debugger/input_responder_plugin.rb
++++ b/lib/puppet-debugger/input_responder_plugin.rb
+@@ -8,6 +8,32 @@ module PuppetDebugger
+   class InputResponderPlugin
+     include Singleton
+     extend Forwardable
++
++    # Plugin files live at this path under a lib directory, in this gem, in a plugin gem,
++    # or on RUBYLIB. Gem.find_files searches installed gems and $LOAD_PATH for the glob.
++    PLUGIN_GLOB = 'plugins/puppet-debugger/input_responders/*.rb'
++
++    # @return [Array<Class>] every subclass defined so far, in definition order
++    def self.registry
++      InputResponderPlugin.instance_variable_get(:@registry) ||
++        InputResponderPlugin.instance_variable_set(:@registry, [])
++    end
++
++    def self.inherited(subclass)
++      super
++      registry << subclass unless registry.include?(subclass)
++    end
++
++    # Requires every plugin file RubyGems or the load path can see, once, and
++    # returns the plugin classes sorted by name.
++    # @return [Array<Class>]
++    def self.load_plugins
++      unless InputResponderPlugin.instance_variable_get(:@plugins_loaded)
++        Gem.find_files(PLUGIN_GLOB).map { |f| File.expand_path(f) }.uniq.each { |file| require file }
++        InputResponderPlugin.instance_variable_set(:@plugins_loaded, true)
++      end
++      registry.sort_by(&:name)
++    end
+     attr_accessor :debugger
+     def_delegators :debugger, :scope, :node, :environment, :loaders, :puppet_environment,
+                    :add_hook, :handle_input, :delete_hook, :puppet_lib_dir
+diff --git a/puppet-debugger.gemspec b/puppet-debugger.gemspec
+index 49b62ae..6dc24fd 100644
+--- a/puppet-debugger.gemspec
++++ b/puppet-debugger.gemspec
+@@ -34,7 +34,6 @@ Gem::Specification.new do |s|
+   s.summary = 'A repl based debugger for the puppet language'
+   s.add_runtime_dependency('awesome_print', ['~> 1.7'])
+   s.add_runtime_dependency('facterdb', ['>= 0.4.0'])
+-  s.add_runtime_dependency('pluginator', ['~> 1.5.0'])
+   # s.add_runtime_dependency('puppet', ['>= 6']) - since there is now puppet and openvox, this is now a grey dependency
+   # s.add_runtime_dependency('bolt', ['>= 2.42.0'])
+   s.add_development_dependency('rdoc', ['>= 6.0'])
+diff --git a/spec/input_responders/vars_spec.rb b/spec/input_responders/vars_spec.rb
+index 9350f62..910339b 100644
+--- a/spec/input_responders/vars_spec.rb
++++ b/spec/input_responders/vars_spec.rb
+@@ -3,7 +3,6 @@
+ require 'spec_helper'
+ require 'puppet-debugger'
+ require 'puppet-debugger/plugin_test_helper'
+-require 'pluginator'
+ 
+ describe :vars do
+   include_examples 'plugin_tests'
+diff --git a/spec/plugin_loading_spec.rb b/spec/plugin_loading_spec.rb
+new file mode 100644
+index 0000000..86bf6cc
+--- /dev/null
++++ b/spec/plugin_loading_spec.rb
+@@ -0,0 +1,59 @@
++# frozen_string_literal: true
++
++require 'spec_helper'
++require 'puppet-debugger'
++require 'tmpdir'
++
++describe 'plugin loading' do
++  let(:plugins) { PuppetDebugger::InputResponderPlugin.load_plugins }
++
++  it 'returns the built-in plugins' do
++    expect(plugins).to include(PuppetDebugger::InputResponders::Commands,
++                               PuppetDebugger::InputResponders::Functions,
++                               PuppetDebugger::InputResponders::Vars)
++  end
++
++  it 'returns only plugin subclasses, sorted by name' do
++    expect(plugins).to all(be < PuppetDebugger::InputResponderPlugin)
++    expect(plugins.map(&:name)).to eq(plugins.map(&:name).sort)
++    expect(plugins.uniq.size).to eq(plugins.size)
++  end
++
++  it 'registers a plugin defined after loading' do
++    klass = Class.new(PuppetDebugger::InputResponderPlugin)
++    begin
++      expect(PuppetDebugger::InputResponderPlugin.registry).to include(klass)
++    ensure
++      PuppetDebugger::InputResponderPlugin.registry.delete(klass)
++    end
++  end
++
++  it 'finds plugin files on the load path' do
++    Dir.mktmpdir do |dir|
++      plugin_dir = File.join(dir, 'plugins', 'puppet-debugger', 'input_responders')
++      FileUtils.mkdir_p(plugin_dir)
++      File.write(File.join(plugin_dir, 'fancy.rb'), <<~RUBY)
++        require 'puppet-debugger/input_responder_plugin'
++        module PuppetDebugger
++          module InputResponders
++            class Fancy < InputResponderPlugin
++              COMMAND_WORDS = %w[fancy].freeze
++              SUMMARY = 'fancy test plugin'
++              COMMAND_GROUP = :tools
++              def run(_args = [])
++                'hello from fancy'
++              end
++            end
++          end
++        end
++      RUBY
++      $LOAD_PATH.unshift(dir)
++      begin
++        expect(Gem.find_files(PuppetDebugger::InputResponderPlugin::PLUGIN_GLOB))
++          .to include(File.join(plugin_dir, 'fancy.rb'))
++      ensure
++        $LOAD_PATH.delete(dir)
++      end
++    end
++  end
++end

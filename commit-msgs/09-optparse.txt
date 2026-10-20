@@ -1,0 +1,13 @@
+Replace the vendored Trollop with optparse
+
+lib/puppet-debugger/trollop.rb was an 869-line copy of Trollop 2.x used
+by Cli.start for six options. Cli.parse_options now builds the same
+options with OptionParser from the standard library: --play, --facts,
+--run-once, --node-name, --catalog and --quiet, each with the one-letter
+short form Trollop derived, plus --help and a new --version. Remaining
+arguments are left in ARGV for the FILE handling as before. A bad option
+prints the error and exits 255 as Trollop did.
+
+Visible change: the layout of `puppet-debugger --help`.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

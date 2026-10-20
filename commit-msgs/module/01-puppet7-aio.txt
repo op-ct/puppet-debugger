@@ -1,0 +1,17 @@
+Require Puppet 7+, report a missing gem, document AIO installs
+
+debug::break() now rescues the LoadError from `require 'puppet-debugger'`
+and raises a Puppet::Error naming the gem and the install command for
+the Ruby in use, so a Bolt plan or puppet run that hits a breakpoint
+without the gem says what to do instead of failing on a bare require.
+
+The Puppet 4.6 stacktrace backport and the version check around it are
+removed; Puppet::Pops::PuppetStack.stacktrace exists in every supported
+Puppet. metadata.json requires puppet >= 7.0.0 < 9.0.0 (OpenVox 8
+satisfies it) and bumps the version to 0.4.0.
+
+The Gemfile accepts PUPPET_DEBUGGER_PATH to develop against a gem
+checkout and otherwise allows puppet-debugger >= 1.6. README: install
+with an AIO Ruby, including the offline path, and use in Bolt plans.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
